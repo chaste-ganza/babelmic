@@ -1,14 +1,15 @@
 public class Main {
     public static void main(String[] args) {
-        int intVal = 42;
-        double doubleVal = intVal;
-        System.out.println("Original int: " + intVal);
-        System.out.println("Converted to double: " + doubleVal);
+        int a = 10;
+        int b = 10;
 
-        double price = 19.99;
-        int wholePrice = (int) price;
+        System.out.println("Primitive comparison (a == b): " + (a == b));
 
-        System.out.println("\nOriginal double: " + price);
-        System.out.println("Casted to int: " + wholePrice);
+        String str1 = new String("Java");
+        String str2 = new String("Java");
+
+        System.out.println("Reference comparison (str1 == str2): " + (str1 == str2));
+
+        System.out.println("Content comparison (str1.equals(str2)): " + str1.equals(str2));
     }
 }

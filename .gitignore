@@ -1,0 +1,7 @@
+# Build artifacts
+out/
+*.class
+
+# Kilo tooling
+.kilo/
+
