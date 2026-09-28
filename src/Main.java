@@ -1,15 +1,21 @@
 public class Main {
     public static void main(String[] args) {
-        int a = 10;
-        int b = 10;
+        char mode = 'B';
 
-        System.out.println("Primitive comparison (a == b): " + (a == b));
+        switch(mode) {
+            case 'A':
+                System.out.println("Mode A Selected");
+                break;
+            case 'B':
+                System.out.println("Mode B Selected");
+                break;
+            default:
+                System.out.println("Default mode");
+        }
 
-        String str1 = new String("Java");
-        String str2 = new String("Java");
-
-        System.out.println("Reference comparison (str1 == str2): " + (str1 == str2));
-
-        System.out.println("Content comparison (str1.equals(str2)): " + str1.equals(str2));
+        System.out.println("\nRunning Loop:");
+        for (int i = 1; i <= 3; i++){
+            System.out.println("Iteration count: " + i);
+        }
     }
 }
