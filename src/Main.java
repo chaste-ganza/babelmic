@@ -1,28 +1,25 @@
 public class Main {
     public static void main(String[] args) {
-        System.out.println("=== BabelMic Pipeline Check ===");
+        System.out.println("=== BabelMic: Full 4-Block Pipeline Test ===");
 
         SpeechRecognizer recognizer = new MockSpeechRecognizer();
         Translator translator = new MockTranslator();
+        TextToSpeech tts = new MockTextToSpeech();
+        PeerConnection connection = new MockPeerConnection();
 
-        ((MockSpeechRecognizer) recognizer).setMicrophoneSensitivity(100);
+        connection.connect("Bob-Pixel16");
+
         String audioInput = "alice_sample.wav";
-        String recognizedText = recognizer.recognizeSpeech(audioInput);
-        System.out.println("Alice said (recognized): \"" + recognizedText + "\"");
+        String englishText = recognizer.recognizeSpeech(audioInput);
+        System.out.println("Aline (EN): " + englishText);
 
-        String translatedText = translator.translate(recognizedText, "English", "French");
-        System.out.println("Translated for Bob (French): \"" + translatedText + "\"");
+        String frenchText = translator.translate(englishText, "English", "French");
 
-        MockTranslator mockTransRef = (MockTranslator) translator;
-        System.out.println("Total translations performed: " + mockTransRef.getTranslationCount());
+        connection.sendData(frenchText);
 
-        String audioInput2 = "bob_sample.wav";
-        String recognizedTextBob = recognizer.recognizeSpeech(audioInput2);
-        System.out.println("Bob said (recognized):: \""+ recognizedTextBob + "\"");
-        
-        String translatedTextBob = translator.translate(recognizedTextBob, "French", "English");
-        System.out.println("Translated for Alice (English): \"" + translatedTextBob + "\"");
-        System.out.println("Total translations performed: " + mockTransRef.getTranslationCount());
+        tts.speak(frenchText, "French");
+
+        connection.disconnect();
 
     }
 }
