@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Incoming message bubble — aligned to the LEFT -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="start"
+    android:paddingHorizontal="8dp"
+    android:paddingVertical="4dp">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_weight="0"
+        android:orientation="vertical"
+        android:background="@drawable/bg_bubble_incoming"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="10dp"
+        android:maxWidth="280dp">
+
+        <!-- What partner said (their original language) -->
+        <TextView
+            android:id="@+id/tv_original_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:textColor="@color/bubble_translated_text"
+            android:fontStyle="italic"
+            tools:text="Où est la gare ?" />
+
+        <!-- Translated into your language — primary text -->
+        <TextView
+            android:id="@+id/tv_translated_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textSize="15sp"
+            android:textColor="@color/bubble_incoming_text"
+            android:textStyle="bold"
+            tools:text="Where is the train station?" />
+
+    </LinearLayout>
+
+</LinearLayout>

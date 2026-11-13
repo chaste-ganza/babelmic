@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Outgoing message bubble — aligned to the RIGHT -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="end"
+    android:paddingHorizontal="8dp"
+    android:paddingVertical="4dp">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_weight="0"
+        android:orientation="vertical"
+        android:background="@drawable/bg_bubble_outgoing"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="10dp"
+        android:maxWidth="280dp">
+
+        <!-- What you said (original) -->
+        <TextView
+            android:id="@+id/tv_original_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="15sp"
+            android:textColor="@color/bubble_outgoing_text"
+            tools:text="Where is the train station?" />
+
+        <!-- What was sent (translated) — dimmer -->
+        <TextView
+            android:id="@+id/tv_translated_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textSize="12sp"
+            android:textColor="#B3FFFFFF"
+            android:fontStyle="italic"
+            tools:text="(sent to partner)" />
+
+    </LinearLayout>
+
+</LinearLayout>

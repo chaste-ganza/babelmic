@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    tools:context=".ui.conversation.ConversationActivity">
+
+    <!-- Toolbar -->
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="0dp"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/babelmic_primary"
+        app:titleTextColor="@color/text_on_primary"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Connection status pill -->
+    <TextView
+        android:id="@+id/tv_connection_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/bg_status_pill"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="4dp"
+        android:textSize="12sp"
+        android:textColor="@color/status_connected"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:text="Connected to partner" />
+
+    <!-- Conversation RecyclerView -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_conversation"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="4dp"
+        android:paddingHorizontal="8dp"
+        android:paddingBottom="8dp"
+        android:clipToPadding="false"
+        app:layout_constraintTop_toBottomOf="@id/tv_connection_status"
+        app:layout_constraintBottom_toTopOf="@id/bottom_panel"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Bottom panel: live caption + status + mic button + disconnect -->
+    <LinearLayout
+        android:id="@+id/bottom_panel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@color/surface"
+        android:elevation="8dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="16dp"
+        android:paddingHorizontal="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Live caption (partial STT results) -->
+        <TextView
+            android:id="@+id/tv_live_caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="20dp"
+            android:textSize="13sp"
+            android:textColor="@color/text_secondary"
+            android:fontStyle="italic"
+            android:gravity="center"
+            android:paddingBottom="4dp"
+            tools:text="Where is the train…" />
+
+        <!-- Status label (Ready / Listening / Translating) -->
+        <TextView
+            android:id="@+id/tv_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textColor="@color/text_hint"
+            android:gravity="center"
+            android:paddingBottom="8dp"
+            tools:text="Ready" />
+
+        <!-- Push-to-talk button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_mic"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/mic_button_height"
+            android:text="@string/btn_hold_to_speak"
+            style="@style/Widget.BabelMic.MicButton"
+            app:cornerRadius="32dp" />
+
+        <!-- Disconnect link-style button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_disconnect"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_marginTop="8dp"
+            android:text="@string/btn_disconnect"
+            android:textColor="@color/status_listening"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            app:cornerRadius="8dp" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

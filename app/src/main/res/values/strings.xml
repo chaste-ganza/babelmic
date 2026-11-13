@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">BabelMic</string>
+    <string name="app_tagline">Speak your language. Be understood anywhere.</string>
+
+    <!-- Language Selection -->
+    <string name="hint_search_language">Search language…</string>
+    <string name="label_select_language">Select your language</string>
+    <string name="label_selected">Speaking:</string>
+    <string name="btn_find_partner">Find Partner</string>
+
+    <!-- Device Discovery -->
+    <string name="title_find_partner">Find a Partner</string>
+    <string name="label_scanning">Scanning for nearby devices…</string>
+    <string name="label_no_peers">No devices found.\nMake sure your partner has BabelMic open.</string>
+    <string name="btn_refresh">Refresh</string>
+    <string name="label_tap_to_connect">Tap a device to connect</string>
+
+    <!-- Conversation -->
+    <string name="btn_hold_to_speak">🎤  Hold to Speak</string>
+    <string name="btn_listening">🔴  Listening…</string>
+    <string name="btn_translating">⏳  Translating…</string>
+    <string name="btn_disconnect">Disconnect</string>
+    <string name="label_ready">Ready</string>
+    <string name="label_connected">Connected</string>
+
+    <!-- Errors -->
+    <string name="error_permissions">BabelMic needs microphone and Wi-Fi Direct permissions to work.</string>
+    <string name="error_wifi_direct_unavailable">Wi-Fi Direct is not available on this device.</string>
+    <string name="error_connection_lost">Connection lost. Go back and reconnect.</string>
+</resources>

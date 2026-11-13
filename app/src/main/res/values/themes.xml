@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.BabelMic" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Primary brand colours -->
+        <item name="colorPrimary">@color/babelmic_primary</item>
+        <item name="colorPrimaryVariant">@color/babelmic_primary_dark</item>
+        <item name="colorOnPrimary">@color/text_on_primary</item>
+
+        <!-- Secondary / accent -->
+        <item name="colorSecondary">@color/babelmic_accent</item>
+        <item name="colorSecondaryVariant">@color/babelmic_accent_dark</item>
+        <item name="colorOnSecondary">@color/text_on_primary</item>
+
+        <!-- Background & surface -->
+        <item name="android:colorBackground">@color/background</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnBackground">@color/text_primary</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+
+        <!-- Status bar -->
+        <item name="android:statusBarColor">@color/babelmic_primary_dark</item>
+        <item name="android:windowLightStatusBar">false</item>
+
+        <!-- Typography defaults -->
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:textColorHint">@color/text_hint</item>
+
+        <!-- Shape -->
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.BabelMic.SmallComponent</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.BabelMic.MediumComponent</item>
+    </style>
+
+    <!-- Rounded corners for cards / chips -->
+    <style name="ShapeAppearance.BabelMic.SmallComponent" parent="ShapeAppearance.MaterialComponents.SmallComponent">
+        <item name="cornerSize">8dp</item>
+    </style>
+
+    <style name="ShapeAppearance.BabelMic.MediumComponent" parent="ShapeAppearance.MaterialComponents.MediumComponent">
+        <item name="cornerSize">12dp</item>
+    </style>
+
+    <!-- Toolbar style -->
+    <style name="Widget.BabelMic.Toolbar" parent="Widget.MaterialComponents.Toolbar.Primary">
+        <item name="android:background">@color/babelmic_primary</item>
+        <item name="titleTextColor">@color/text_on_primary</item>
+    </style>
+
+    <!-- Mic button — large circular FAB-style -->
+    <style name="Widget.BabelMic.MicButton" parent="Widget.MaterialComponents.Button">
+        <item name="android:paddingTop">16dp</item>
+        <item name="android:paddingBottom">16dp</item>
+        <item name="cornerRadius">32dp</item>
+        <item name="backgroundTint">@color/mic_idle</item>
+        <item name="android:textColor">@color/text_on_primary</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="elevation">4dp</item>
+    </style>
+
+</resources>

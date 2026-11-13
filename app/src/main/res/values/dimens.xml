@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="spacing_xs">4dp</dimen>
+    <dimen name="spacing_sm">8dp</dimen>
+    <dimen name="spacing_md">16dp</dimen>
+    <dimen name="spacing_lg">24dp</dimen>
+    <dimen name="spacing_xl">32dp</dimen>
+
+    <dimen name="card_elevation">2dp</dimen>
+    <dimen name="card_corner_radius">12dp</dimen>
+
+    <dimen name="bubble_max_width_fraction">0.75</dimen>
+    <dimen name="bubble_padding_h">14dp</dimen>
+    <dimen name="bubble_padding_v">10dp</dimen>
+    <dimen name="bubble_corner_radius">18dp</dimen>
+
+    <dimen name="mic_button_height">64dp</dimen>
+    <dimen name="text_size_body">15sp</dimen>
+    <dimen name="text_size_caption">13sp</dimen>
+    <dimen name="text_size_title">20sp</dimen>
+</resources>
