@@ -27,7 +27,7 @@
             android:layout_height="wrap_content"
             android:textSize="13sp"
             android:textColor="@color/bubble_translated_text"
-            android:fontStyle="italic"
+            android:textStyle="italic"
             tools:text="Où est la gare ?" />
 
         <!-- Translated into your language — primary text -->

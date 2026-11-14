@@ -132,7 +132,7 @@ public class DeviceDiscoveryActivity extends AppCompatActivity
     @Override
     public void onConnectionEstablished(InetAddress groupOwnerAddress, boolean isGroupOwner) {
         runOnUiThread(() -> {
-            binding.progressConnecting.setVisibility(View.GONE);
+            binding.layoutConnecting.setVisibility(View.GONE);
             navigateToConversation(groupOwnerAddress.getHostAddress(), isGroupOwner);
         });
     }
@@ -140,7 +140,7 @@ public class DeviceDiscoveryActivity extends AppCompatActivity
     @Override
     public void onDisconnected() {
         runOnUiThread(() -> {
-            binding.progressConnecting.setVisibility(View.GONE);
+            binding.layoutConnecting.setVisibility(View.GONE);
             Toast.makeText(this, "Disconnected", Toast.LENGTH_SHORT).show();
         });
     }
@@ -148,7 +148,7 @@ public class DeviceDiscoveryActivity extends AppCompatActivity
     @Override
     public void onError(String message) {
         runOnUiThread(() -> {
-            binding.progressConnecting.setVisibility(View.GONE);
+            binding.layoutConnecting.setVisibility(View.GONE);
             showError(message);
         });
     }
@@ -157,9 +157,8 @@ public class DeviceDiscoveryActivity extends AppCompatActivity
 
     @Override
     public void onDeviceSelected(WifiP2pDevice device) {
-        binding.progressConnecting.setVisibility(View.VISIBLE);
+        binding.layoutConnecting.setVisibility(View.VISIBLE);
         binding.tvConnectingTo.setText("Connecting to " + device.deviceName + "…");
-        binding.tvConnectingTo.setVisibility(View.VISIBLE);
         wifiDirectManager.connectTo(device);
     }
 
@@ -178,8 +177,7 @@ public class DeviceDiscoveryActivity extends AppCompatActivity
     // ─── UI helpers ───────────────────────────────────────────────────────────
 
     private void showScanning(boolean scanning) {
-        binding.progressScanning.setVisibility(scanning ? View.VISIBLE : View.GONE);
-        binding.tvScanning.setVisibility(scanning ? View.VISIBLE : View.GONE);
+        binding.layoutScanning.setVisibility(scanning ? View.VISIBLE : View.GONE);
         if (scanning) {
             binding.tvNoPeers.setVisibility(View.GONE);
         }

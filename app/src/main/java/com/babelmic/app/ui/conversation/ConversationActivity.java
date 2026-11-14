@@ -3,7 +3,6 @@ package com.babelmic.app.ui.conversation;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
-import android.view.View;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -184,13 +183,14 @@ public class ConversationActivity extends AppCompatActivity {
         });
 
         // 5. Start socket in background
+        final ConversationActivity self = this;
         executor.execute(() -> {
             if (isGroupOwner) {
                 peerConnection.startServer();
             } else {
                 boolean ok = peerConnection.connect(peerIpAddress);
                 if (!ok) {
-                    runOnUiThread(() -> Toast.makeText(this,
+                    runOnUiThread(() -> Toast.makeText(self,
                             "Could not connect to partner. Try going back and reconnecting.",
                             Toast.LENGTH_LONG).show());
                 }

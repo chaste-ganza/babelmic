@@ -1,12 +1,51 @@
-# Build artifacts
+# ─── Android build output ────────────────────────────────────────────────────
+/build/
+app/build/
 out/
 *.class
+*.apk
+*.aab
+*.dex
 
-# Kilo tooling
+# ─── Gradle ──────────────────────────────────────────────────────────────────
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+
+# ─── Local machine config (NEVER commit) ─────────────────────────────────────
+local.properties
+
+# ─── Android Studio / IntelliJ IDEA ──────────────────────────────────────────
+# Keep: gradle.xml (Gradle linkage) and misc.xml (SDK version)
+# Skip everything else that is machine-specific
+.idea/caches/
+.idea/libraries/
+.idea/modules/
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/shelf/
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+.idea/deploymentTargetSelector.xml
+.idea/deviceManager.xml
+.idea/migrations.xml
+.idea/compiler.xml
+.idea/codeStyles/
+.idea/.name
+*.iws
+*.iml
+*.ipr
+
+# ─── OS generated ────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── Old tooling (kept from original project) ────────────────────────────────
 .kilo/
-
 branch_structure.json
 temp_auto_push.bat
 temp_interactive_push.bat
 config.bat
-node_modules
+node_modules/

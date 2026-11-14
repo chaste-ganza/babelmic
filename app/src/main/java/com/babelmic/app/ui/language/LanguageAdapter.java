@@ -26,7 +26,7 @@ public class LanguageAdapter extends RecyclerView.Adapter<LanguageAdapter.Langua
 
     private List<Language> languages;
     private final OnLanguageSelectedListener listener;
-    private int selectedPosition = RecyclerView.NO_ID;
+    private int selectedPosition = -1;
 
     public LanguageAdapter(List<Language> languages, OnLanguageSelectedListener listener) {
         this.languages = languages;
@@ -36,7 +36,7 @@ public class LanguageAdapter extends RecyclerView.Adapter<LanguageAdapter.Langua
     /** Replace the current dataset (used by search filtering). */
     public void updateList(List<Language> newList) {
         this.languages = newList;
-        selectedPosition = RecyclerView.NO_ID;
+        selectedPosition = -1;
         notifyDataSetChanged();
     }
 

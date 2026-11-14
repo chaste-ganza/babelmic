@@ -38,7 +38,7 @@ public class AndroidTextToSpeech implements TextToSpeech {
         void onSpeechError(String utteranceId, String errorMessage);
     }
 
-    private final android.speech.tts.TextToSpeech tts;
+    private android.speech.tts.TextToSpeech tts;
     private final AtomicBoolean isReady = new AtomicBoolean(false);
     private SpeechDoneCallback doneCallback;
 
