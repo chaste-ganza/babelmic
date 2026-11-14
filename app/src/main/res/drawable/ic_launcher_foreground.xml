@@ -13,11 +13,10 @@
 
     <!-- Mic stand arc -->
     <path
-        android:fillColor="#FFFFFF"
+        android:fillColor="@android:color/transparent"
         android:strokeColor="#FFFFFF"
         android:strokeWidth="3"
-        android:pathData="M38,52 C38,63 45,72 54,72 C63,72 70,63 70,52"
-        android:fillAlpha="0" />
+        android:pathData="M38,52 C38,63 45,72 54,72 C63,72 70,63 70,52" />
 
     <!-- Stand pole -->
     <path

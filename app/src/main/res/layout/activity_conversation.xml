@@ -72,7 +72,7 @@
             android:minHeight="20dp"
             android:textSize="13sp"
             android:textColor="@color/text_secondary"
-            android:fontStyle="italic"
+            android:textStyle="italic"
             android:gravity="center"
             android:paddingBottom="4dp"
             tools:text="Where is the train…" />

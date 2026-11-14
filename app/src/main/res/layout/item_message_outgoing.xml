@@ -37,7 +37,7 @@
             android:layout_marginTop="4dp"
             android:textSize="12sp"
             android:textColor="#B3FFFFFF"
-            android:fontStyle="italic"
+            android:textStyle="italic"
             tools:text="(sent to partner)" />
 
     </LinearLayout>

@@ -44,30 +44,35 @@
             app:layout_constraintStart_toStartOf="parent"
             tools:text="Your language: English" />
 
-        <!-- Scanning progress -->
-        <ProgressBar
-            android:id="@+id/progress_scanning"
-            style="?android:attr/progressBarStyleSmall"
+        <!-- Scanning row: spinner + label side by side -->
+        <LinearLayout
+            android:id="@+id/layout_scanning"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
             android:layout_marginStart="16dp"
+            android:layout_marginTop="8dp"
             android:visibility="visible"
             app:layout_constraintTop_toBottomOf="@id/tv_your_language"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintBottom_toTopOf="@id/tv_scanning" />
+            app:layout_constraintStart_toStartOf="parent">
 
-        <TextView
-            android:id="@+id/tv_scanning"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:text="@string/label_scanning"
-            android:textSize="13sp"
-            android:textColor="@color/text_secondary"
-            android:visibility="visible"
-            app:layout_constraintTop_toTopOf="@id/progress_scanning"
-            app:layout_constraintBottom_toBottomOf="@id/progress_scanning"
-            app:layout_constraintStart_toEndOf="@id/progress_scanning" />
+            <ProgressBar
+                android:id="@+id/progress_scanning"
+                style="?android:attr/progressBarStyleSmall"
+                android:layout_width="20dp"
+                android:layout_height="20dp" />
+
+            <TextView
+                android:id="@+id/tv_scanning"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="@string/label_scanning"
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary" />
+
+        </LinearLayout>
 
         <!-- Peer list -->
         <androidx.recyclerview.widget.RecyclerView
@@ -77,12 +82,12 @@
             android:layout_marginTop="8dp"
             android:paddingHorizontal="8dp"
             android:clipToPadding="false"
-            app:layout_constraintTop_toBottomOf="@id/progress_scanning"
+            app:layout_constraintTop_toBottomOf="@id/layout_scanning"
             app:layout_constraintBottom_toTopOf="@id/bottom_bar"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
-        <!-- Empty state -->
+        <!-- Empty state — centred inside the RecyclerView area -->
         <TextView
             android:id="@+id/tv_no_peers"
             android:layout_width="0dp"
@@ -98,7 +103,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
-        <!-- Bottom bar: connecting indicator + refresh -->
+        <!-- Bottom bar: connecting indicator + refresh button -->
         <LinearLayout
             android:id="@+id/bottom_bar"
             android:layout_width="0dp"
@@ -111,7 +116,10 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
 
-            <!-- Connecting progress (hidden until user taps a device) -->
+            <!--
+                Connecting row — shown when user taps a device.
+                The activity shows/hides THIS LinearLayout as a unit.
+            -->
             <LinearLayout
                 android:id="@+id/layout_connecting"
                 android:layout_width="match_parent"
@@ -125,8 +133,7 @@
                     android:id="@+id/progress_connecting"
                     style="?android:attr/progressBarStyleSmall"
                     android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:visibility="gone" />
+                    android:layout_height="20dp" />
 
                 <TextView
                     android:id="@+id/tv_connecting_to"
@@ -136,7 +143,6 @@
                     android:layout_marginStart="8dp"
                     android:textSize="14sp"
                     android:textColor="@color/text_primary"
-                    android:visibility="gone"
                     tools:text="Connecting to Alice's Pixel…" />
 
             </LinearLayout>
