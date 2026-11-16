@@ -53,23 +53,28 @@ public class MLKitTranslator implements Translator {
 
     /**
      * Downloads (if needed) and warms up the translation model for the given language pair.
-     * Call this on the ConversationActivity's onCreate so the model is ready by the time
-     * the user starts speaking.
+     * Call this early (e.g. in ConversationActivity.onCreate) so the model is ready
+     * before the user starts speaking.
+     *
+     * <p>The download is attempted on any active connection (Wi-Fi or mobile data).
+     * If you want Wi-Fi-only, pass {@code wifiOnly = true}.</p>
      *
      * @param sourceLang BCP-47 tag e.g. "en"
      * @param targetLang BCP-47 tag e.g. "fr"
+     * @param wifiOnly   If true, download is deferred until Wi-Fi is available
      * @param callback   Notified on success or failure (called on a background thread)
      */
     public void prepareModel(@NonNull String sourceLang,
                              @NonNull String targetLang,
+                             boolean wifiOnly,
                              @NonNull ModelReadyCallback callback) {
         executor.execute(() -> {
             try {
                 ensureTranslator(sourceLang, targetLang);
 
-                DownloadConditions conditions = new DownloadConditions.Builder()
-                        .requireWifi()
-                        .build();
+                DownloadConditions conditions = wifiOnly
+                        ? new DownloadConditions.Builder().requireWifi().build()
+                        : new DownloadConditions.Builder().build();
 
                 CountDownLatch latch = new CountDownLatch(1);
                 AtomicReference<Exception> error = new AtomicReference<>();
@@ -94,6 +99,15 @@ public class MLKitTranslator implements Translator {
                 callback.onModelDownloadFailed(e);
             }
         });
+    }
+
+    /**
+     * Convenience overload — downloads on any connection (Wi-Fi or mobile data).
+     */
+    public void prepareModel(@NonNull String sourceLang,
+                             @NonNull String targetLang,
+                             @NonNull ModelReadyCallback callback) {
+        prepareModel(sourceLang, targetLang, false, callback);
     }
 
     /**

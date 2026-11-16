@@ -14,6 +14,11 @@ public class SessionConfig {
     public static final String EXTRA_IS_GROUP_OWNER     = "extra_is_group_owner";
     public static final String EXTRA_PEER_IP_ADDRESS    = "extra_peer_ip_address";
 
+    /** When true, ConversationActivity runs in loopback/test mode — no Wi-Fi Direct needed. */
+    public static final String EXTRA_LOOPBACK_MODE      = "extra_loopback_mode";
+    /** BCP-47 tag of the language to translate INTO during loopback mode. */
+    public static final String EXTRA_LOOPBACK_TARGET_LANG = "extra_loopback_target_lang";
+
     private Language myLanguage;
     private boolean  isGroupOwner;
     private String   peerIpAddress; // set after Wi-Fi Direct group forms

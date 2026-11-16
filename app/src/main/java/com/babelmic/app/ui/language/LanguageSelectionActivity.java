@@ -14,6 +14,7 @@ import com.babelmic.app.databinding.ActivityLanguageSelectionBinding;
 import com.babelmic.app.model.Language;
 import com.babelmic.app.model.SessionConfig;
 import com.babelmic.app.ui.discovery.DeviceDiscoveryActivity;
+import com.babelmic.app.ui.conversation.ConversationActivity;
 import com.babelmic.app.util.LanguageManager;
 import com.babelmic.app.util.PermissionHelper;
 
@@ -89,6 +90,21 @@ public class LanguageSelectionActivity extends AppCompatActivity
             }
             navigateToDiscovery();
         });
+
+        binding.btnTestMode.setEnabled(false);
+        binding.btnTestMode.setOnClickListener(v -> {
+            if (selectedLanguage == null) {
+                Toast.makeText(this, "Please select your language first", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (!PermissionHelper.hasAllPermissions(this)) {
+                PermissionHelper.requestMissingPermissions(this);
+                Toast.makeText(this, "Please grant all permissions to continue",
+                        Toast.LENGTH_SHORT).show();
+                return;
+            }
+            navigateToLoopback();
+        });
     }
 
     // ─── Language selection callback ──────────────────────────────────────────
@@ -101,6 +117,7 @@ public class LanguageSelectionActivity extends AppCompatActivity
                         + " — " + language.getNativeName());
         binding.tvSelectedLanguage.setVisibility(View.VISIBLE);
         binding.btnFindPartner.setEnabled(true);
+        binding.btnTestMode.setEnabled(true);
     }
 
     // ─── Filtering ────────────────────────────────────────────────────────────
@@ -128,6 +145,34 @@ public class LanguageSelectionActivity extends AppCompatActivity
         Intent intent = new Intent(this, DeviceDiscoveryActivity.class);
         intent.putExtra(SessionConfig.EXTRA_MY_LANGUAGE_TAG,  selectedLanguage.getBcp47Tag());
         intent.putExtra(SessionConfig.EXTRA_MY_LANGUAGE_NAME, selectedLanguage.getDisplayName());
+        startActivity(intent);
+    }
+
+    /**
+     * Launch ConversationActivity in loopback/test mode.
+     * Picks a target language automatically — the first supported language
+     * that is different from the user's selected language.
+     * e.g. if the user selects English, loopback translates to French.
+     */
+    private void navigateToLoopback() {
+        // Pick a target language different from the source for a meaningful test
+        String targetTag = "fr"; // default fallback
+        for (Language lang : LanguageManager.getSupportedLanguages()) {
+            if (!lang.getBcp47Tag().equalsIgnoreCase(selectedLanguage.getBcp47Tag())) {
+                targetTag = lang.getBcp47Tag();
+                break;
+            }
+        }
+        // If user picked French, default target to English instead
+        if (selectedLanguage.getBcp47Tag().equalsIgnoreCase("fr")) {
+            targetTag = "en";
+        }
+
+        Intent intent = new Intent(this, ConversationActivity.class);
+        intent.putExtra(SessionConfig.EXTRA_MY_LANGUAGE_TAG,      selectedLanguage.getBcp47Tag());
+        intent.putExtra(SessionConfig.EXTRA_MY_LANGUAGE_NAME,     selectedLanguage.getDisplayName());
+        intent.putExtra(SessionConfig.EXTRA_LOOPBACK_MODE,        true);
+        intent.putExtra(SessionConfig.EXTRA_LOOPBACK_TARGET_LANG, targetTag);
         startActivity(intent);
     }
 

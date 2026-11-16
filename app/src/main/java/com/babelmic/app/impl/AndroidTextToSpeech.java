@@ -3,13 +3,19 @@ package com.babelmic.app.impl;
 import android.content.Context;
 import android.os.Bundle;
 import android.speech.tts.UtteranceProgressListener;
+import android.speech.tts.Voice;
 import android.util.Log;
 
 import com.babelmic.app.core.TextToSpeech;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -42,6 +48,8 @@ public class AndroidTextToSpeech implements TextToSpeech {
     private final AtomicBoolean isReady = new AtomicBoolean(false);
     private SpeechDoneCallback doneCallback;
 
+    // Cache: language tag → best voice found for that language (null = not yet searched)
+    private final Map<String, android.speech.tts.Voice> voiceCache = new HashMap<>();
     // Cache of language tag → Locale to avoid repeated lookups
     private final Map<String, Locale> localeCache = new HashMap<>();
 
@@ -83,8 +91,9 @@ public class AndroidTextToSpeech implements TextToSpeech {
 
     /**
      * Speak the given text in the specified language.
-     * Queues the utterance — if another utterance is already playing it will
-     * play afterward (QUEUE_ADD behaviour).
+     * Selects the best available voice for that language automatically:
+     * prefers network-quality voices when available, then local high-quality,
+     * then any voice for that locale — always better than the default.
      *
      * @param text     Text to speak. Must not be null or empty.
      * @param language BCP-47 language tag, e.g. "fr", "en", "es".
@@ -100,14 +109,8 @@ public class AndroidTextToSpeech implements TextToSpeech {
             return;
         }
 
-        Locale locale = resolveLocale(language);
-        int setLangResult = tts.setLanguage(locale);
-
-        if (setLangResult == android.speech.tts.TextToSpeech.LANG_MISSING_DATA
-                || setLangResult == android.speech.tts.TextToSpeech.LANG_NOT_SUPPORTED) {
-            Log.w(TAG, "Language not supported: " + language + " — falling back to default locale");
-            tts.setLanguage(Locale.getDefault());
-        }
+        // Apply the best voice for this language
+        applyBestVoice(language);
 
         // Slightly slower speech rate makes translations easier to follow
         tts.setSpeechRate(0.9f);
@@ -124,6 +127,114 @@ public class AndroidTextToSpeech implements TextToSpeech {
                 utteranceId);
 
         Log.d(TAG, "Queued utterance [" + language + "]: " + text);
+    }
+
+    /**
+     * Applies the best available TTS voice for the given language tag.
+     * Preference order:
+     *   1. Network-quality voice (highest naturalness, needs internet for first use)
+     *   2. Local high-quality voice
+     *   3. Any voice that matches the language locale
+     *   4. Fallback: setLanguage() with the resolved locale
+     *
+     * Results are cached so the voice search only runs once per language per session.
+     */
+    private void applyBestVoice(String languageTag) {
+        // Check cache first
+        if (voiceCache.containsKey(languageTag)) {
+            Voice cached = voiceCache.get(languageTag);
+            if (cached != null) {
+                tts.setVoice(cached);
+            } else {
+                // Previously found no good voice — fall back to setLanguage
+                tts.setLanguage(resolveLocale(languageTag));
+            }
+            return;
+        }
+
+        Locale targetLocale = resolveLocale(languageTag);
+        Set<Voice> voices = tts.getVoices();
+
+        if (voices == null || voices.isEmpty()) {
+            Log.w(TAG, "No voices available from TTS engine");
+            tts.setLanguage(targetLocale);
+            voiceCache.put(languageTag, null);
+            return;
+        }
+
+        // Filter to voices that match the target language
+        List<Voice> matching = new ArrayList<>();
+        for (Voice voice : voices) {
+            Locale voiceLocale = voice.getLocale();
+            if (voiceLocale != null
+                    && voiceLocale.getLanguage().equalsIgnoreCase(targetLocale.getLanguage())
+                    && !voice.isNetworkConnectionRequired()  // prefer local voices that work offline
+                    ) {
+                matching.add(voice);
+            }
+        }
+
+        // Also collect network voices as fallback (better quality but needs internet)
+        List<Voice> networkVoices = new ArrayList<>();
+        for (Voice voice : voices) {
+            Locale voiceLocale = voice.getLocale();
+            if (voiceLocale != null
+                    && voiceLocale.getLanguage().equalsIgnoreCase(targetLocale.getLanguage())
+                    && voice.isNetworkConnectionRequired()) {
+                networkVoices.add(voice);
+            }
+        }
+
+        // Score voices: lower latency = better for local voices
+        // For network voices: sort by quality (name often contains "enhanced"/"wavenet")
+        Voice best = null;
+
+        if (!matching.isEmpty()) {
+            // Sort local voices: prefer those without network requirement and lower latency
+            Collections.sort(matching, (a, b) -> {
+                int aLatency = a.getLatency();
+                int bLatency = b.getLatency();
+                // Also prefer voices with "enhanced" or higher quality in the name
+                boolean aEnhanced = a.getName().toLowerCase().contains("enhanced")
+                        || a.getName().toLowerCase().contains("high");
+                boolean bEnhanced = b.getName().toLowerCase().contains("enhanced")
+                        || b.getName().toLowerCase().contains("high");
+                if (aEnhanced != bEnhanced) return aEnhanced ? -1 : 1;
+                return Integer.compare(aLatency, bLatency);
+            });
+            best = matching.get(0);
+        } else if (!networkVoices.isEmpty()) {
+            // Prefer network voice with "enhanced" or "wavenet" in name
+            Collections.sort(networkVoices, (a, b) -> {
+                boolean aEnhanced = a.getName().toLowerCase().contains("enhanced")
+                        || a.getName().toLowerCase().contains("wavenet")
+                        || a.getName().toLowerCase().contains("neural");
+                boolean bEnhanced = b.getName().toLowerCase().contains("enhanced")
+                        || b.getName().toLowerCase().contains("wavenet")
+                        || b.getName().toLowerCase().contains("neural");
+                if (aEnhanced != bEnhanced) return aEnhanced ? -1 : 1;
+                return 0;
+            });
+            best = networkVoices.get(0);
+        }
+
+        if (best != null) {
+            Log.d(TAG, "Selected voice for [" + languageTag + "]: " + best.getName()
+                    + " | network=" + best.isNetworkConnectionRequired()
+                    + " | latency=" + best.getLatency());
+            tts.setVoice(best);
+            voiceCache.put(languageTag, best);
+        } else {
+            Log.w(TAG, "No matching voice for language: " + languageTag
+                    + " — falling back to setLanguage()");
+            int result = tts.setLanguage(targetLocale);
+            if (result == android.speech.tts.TextToSpeech.LANG_MISSING_DATA
+                    || result == android.speech.tts.TextToSpeech.LANG_NOT_SUPPORTED) {
+                Log.w(TAG, "Language pack missing for: " + languageTag);
+                tts.setLanguage(Locale.getDefault());
+            }
+            voiceCache.put(languageTag, null);
+        }
     }
 
     /**
