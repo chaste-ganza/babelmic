@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/background">
+
+    <!-- Top spacer -->
+    <View android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- Logo -->
+    <ImageView
+        android:id="@+id/iv_logo"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/ic_logo"
+        android:contentDescription="BabelMic"
+        android:layout_gravity="center_horizontal" />
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Pending connection request"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:gravity="center"
+        android:layout_gravity="center_horizontal"
+        android:paddingHorizontal="32dp"
+        android:layout_marginTop="40dp" />
+
+    <!-- Avatar row: You → arrow → Peer -->
+    <LinearLayout
+        android:id="@+id/row_avatars"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="32dp">
+
+        <LinearLayout
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <com.babelmic.app.ui.widget.AvatarIconView
+                android:id="@+id/iv_my_avatar"
+                android:layout_width="64dp"
+                android:layout_height="64dp" />
+
+            <TextView
+                android:id="@+id/tv_my_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textSize="13sp"
+                android:textColor="@color/text_primary"
+                android:text="You" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:text="→"
+            android:textSize="28sp"
+            android:textColor="@color/babelmic_accent" />
+
+        <LinearLayout
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <com.babelmic.app.ui.widget.AvatarIconView
+                android:id="@+id/iv_peer_avatar"
+                android:layout_width="64dp"
+                android:layout_height="64dp" />
+
+            <TextView
+                android:id="@+id/tv_peer_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textSize="13sp"
+                android:textColor="@color/text_primary"
+                tools:text="Nick" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Middle spacer -->
+    <View android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="2" />
+
+    <!-- Revoke button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_revoke"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/button_height"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginBottom="32dp"
+        android:text="Revoke"
+        android:textColor="@color/text_on_primary"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:backgroundTint="@color/babelmic_primary"
+        app:cornerRadius="@dimen/button_corner"
+        app:elevation="0dp" />
+
+</LinearLayout>

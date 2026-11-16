@@ -8,69 +8,62 @@
     android:background="@color/background"
     tools:context=".ui.language.LanguageSelectionActivity">
 
-    <!-- App logo / title header -->
-    <LinearLayout
-        android:id="@+id/header"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:paddingTop="40dp"
-        android:paddingBottom="20dp"
-        android:background="@color/babelmic_primary"
+    <!-- Back arrow -->
+    <ImageButton
+        android:id="@+id/btn_back"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_back_arrow"
+        android:contentDescription="Back"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintStart_toStartOf="parent" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="🎙️ BabelMic"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            android:textColor="@color/text_on_primary" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="@string/app_tagline"
-            android:textSize="13sp"
-            android:textColor="#CCE3F9" />
-    </LinearLayout>
-
-    <!-- "Select your language" label -->
-    <TextView
-        android:id="@+id/tv_label"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="@string/label_select_language"
-        android:textSize="17sp"
-        android:textStyle="bold"
-        android:textColor="@color/text_primary"
-        android:paddingHorizontal="16dp"
-        android:paddingTop="20dp"
-        android:paddingBottom="8dp"
-        app:layout_constraintTop_toBottomOf="@id/header"
+    <!-- Logo -->
+    <ImageView
+        android:id="@+id/iv_logo"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/ic_logo"
+        android:contentDescription="BabelMic"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Search bar -->
+    <!-- Title -->
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Select your language"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@id/iv_logo"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Search input -->
     <EditText
         android:id="@+id/et_search_language"
         android:layout_width="0dp"
-        android:layout_height="48dp"
-        android:layout_marginHorizontal="16dp"
-        android:background="@drawable/bg_search_field"
-        android:hint="@string/hint_search_language"
+        android:layout_height="@dimen/input_height"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/bg_input_pill"
+        android:hint="Search"
         android:textColorHint="@color/text_hint"
         android:textColor="@color/text_primary"
         android:textSize="15sp"
-        android:paddingHorizontal="16dp"
+        android:paddingHorizontal="20dp"
         android:inputType="text"
-        android:imeOptions="actionSearch"
         android:singleLine="true"
-        app:layout_constraintTop_toBottomOf="@id/tv_label"
+        android:imeOptions="actionSearch"
+        app:layout_constraintTop_toBottomOf="@id/tv_title"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
@@ -80,62 +73,30 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
-        android:paddingHorizontal="8dp"
         android:clipToPadding="false"
+        android:paddingBottom="8dp"
         app:layout_constraintTop_toBottomOf="@id/et_search_language"
-        app:layout_constraintBottom_toTopOf="@id/selection_footer"
+        app:layout_constraintBottom_toTopOf="@id/btn_confirm"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Footer: selected language + continue button -->
-    <LinearLayout
-        android:id="@+id/selection_footer"
+    <!-- Confirm button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_confirm"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp"
-        android:background="@color/surface"
-        android:elevation="8dp"
+        android:layout_height="@dimen/button_height"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginBottom="32dp"
+        android:text="Confirm"
+        android:enabled="false"
+        android:textColor="@color/text_on_primary"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:backgroundTint="@color/babelmic_primary"
+        app:cornerRadius="@dimen/button_corner"
+        app:elevation="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <TextView
-            android:id="@+id/tv_selected_language"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="15sp"
-            android:textColor="@color/babelmic_primary"
-            android:textStyle="bold"
-            android:gravity="center"
-            android:paddingBottom="12dp"
-            android:visibility="gone"
-            tools:text="🇫🇷  French — Français"
-            tools:visibility="visible" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_find_partner"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:text="@string/btn_find_partner"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:cornerRadius="12dp"
-            android:enabled="false" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_test_mode"
-            android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:layout_marginTop="8dp"
-            android:text="🧪  Test Pipeline (loopback)"
-            android:textSize="13sp"
-            android:enabled="false"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            app:strokeColor="@color/babelmic_accent"
-            app:cornerRadius="12dp"
-            android:textColor="@color/babelmic_accent" />
-
-    </LinearLayout>
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

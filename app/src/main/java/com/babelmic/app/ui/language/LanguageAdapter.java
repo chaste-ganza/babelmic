@@ -3,6 +3,7 @@ package com.babelmic.app.ui.language;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -15,75 +16,65 @@ import java.util.List;
 
 /**
  * RecyclerView adapter for the language selection list.
- * Highlights the currently selected item and fires {@link OnLanguageSelectedListener}
- * on tap.
+ * Shows: flag emoji | language name (bold) | native name | check on selected row.
  */
-public class LanguageAdapter extends RecyclerView.Adapter<LanguageAdapter.LanguageViewHolder> {
+public class LanguageAdapter extends RecyclerView.Adapter<LanguageAdapter.LangViewHolder> {
 
     public interface OnLanguageSelectedListener {
         void onLanguageSelected(Language language);
     }
 
-    private List<Language> languages;
+    private List<Language>              languages;
     private final OnLanguageSelectedListener listener;
-    private int selectedPosition = -1;
+    private int                         selectedPosition = -1;
 
     public LanguageAdapter(List<Language> languages, OnLanguageSelectedListener listener) {
         this.languages = languages;
         this.listener  = listener;
     }
 
-    /** Replace the current dataset (used by search filtering). */
     public void updateList(List<Language> newList) {
-        this.languages = newList;
-        selectedPosition = -1;
+        this.languages       = newList;
+        this.selectedPosition = -1;
         notifyDataSetChanged();
     }
 
-    @NonNull
-    @Override
-    public LanguageViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
+    @NonNull @Override
+    public LangViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_language, parent, false);
-        return new LanguageViewHolder(view);
+        return new LangViewHolder(v);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull LanguageViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull LangViewHolder h, int position) {
         Language lang = languages.get(position);
-        holder.tvFlag.setText(lang.getFlagEmoji());
-        holder.tvDisplayName.setText(lang.getDisplayName());
-        holder.tvNativeName.setText(lang.getNativeName());
+        h.tvFlag.setText(lang.getFlagEmoji());
+        h.tvName.setText(lang.getDisplayName());
+        h.tvNative.setText(lang.getNativeName());
+        h.ivSelected.setVisibility(position == selectedPosition ? View.VISIBLE : View.GONE);
 
-        // Highlight selected row
-        holder.itemView.setSelected(position == selectedPosition);
-
-        holder.itemView.setOnClickListener(v -> {
-            int prev = selectedPosition;
-            selectedPosition = holder.getAdapterPosition();
+        h.itemView.setOnClickListener(v -> {
+            int prev        = selectedPosition;
+            selectedPosition = h.getAdapterPosition();
             notifyItemChanged(prev);
             notifyItemChanged(selectedPosition);
             listener.onLanguageSelected(lang);
         });
     }
 
-    @Override
-    public int getItemCount() {
-        return languages.size();
-    }
+    @Override public int getItemCount() { return languages.size(); }
 
-    // ─── ViewHolder ───────────────────────────────────────────────────────────
+    static class LangViewHolder extends RecyclerView.ViewHolder {
+        TextView  tvFlag, tvName, tvNative;
+        ImageView ivSelected;
 
-    static class LanguageViewHolder extends RecyclerView.ViewHolder {
-        TextView tvFlag;
-        TextView tvDisplayName;
-        TextView tvNativeName;
-
-        LanguageViewHolder(@NonNull View itemView) {
-            super(itemView);
-            tvFlag        = itemView.findViewById(R.id.tv_flag);
-            tvDisplayName = itemView.findViewById(R.id.tv_language_name);
-            tvNativeName  = itemView.findViewById(R.id.tv_native_name);
+        LangViewHolder(@NonNull View v) {
+            super(v);
+            tvFlag     = v.findViewById(R.id.tv_flag);
+            tvName     = v.findViewById(R.id.tv_language_name);
+            tvNative   = v.findViewById(R.id.tv_native_name);
+            ivSelected = v.findViewById(R.id.iv_selected);
         }
     }
 }

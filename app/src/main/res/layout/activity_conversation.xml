@@ -1,4 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Conversation screen layout:
+    ┌──────────────────────────────────────┐
+    │  [Disconnect]        🎙 BabelMic     │  top bar (no toolbar)
+    ├──────────────────────────────────────┤
+    │                                      │
+    │       Avatar visualizer              │  upper centre ~40%
+    │       (speaker name label)           │
+    │                                      │
+    ├──────────────────────────────────────┤
+    │   ┌──────────────────────────────┐   │
+    │   │ previous text (grey/faded)   │   │  yellow card
+    │   │ current translation (bold)   │   │
+    │   └──────────────────────────────┘   │
+    ├──────────────────────────────────────┤
+    │              ( 🎤 )                   │  circular FAB mic button
+    └──────────────────────────────────────┘
+-->
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -8,106 +26,158 @@
     android:background="@color/background"
     tools:context=".ui.conversation.ConversationActivity">
 
-    <!-- Toolbar -->
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
-        android:layout_width="0dp"
-        android:layout_height="?attr/actionBarSize"
-        android:background="@color/babelmic_primary"
-        app:titleTextColor="@color/text_on_primary"
+    <!-- ── Top bar ───────────────────────────────────────────────────────── -->
+
+    <!-- Disconnect pill — top left -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_disconnect"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:paddingHorizontal="16dp"
+        android:text="Disconnect"
+        android:textColor="@color/text_on_primary"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        app:backgroundTint="@color/disconnect_button_bg"
+        app:cornerRadius="20dp"
+        app:elevation="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- Logo — top centre -->
+    <ImageView
+        android:id="@+id/iv_logo"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/ic_logo"
+        android:contentDescription="BabelMic"
+        android:layout_marginTop="16dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Connection status pill -->
+    <!-- ── Guideline between top bar and avatar zone ─────────────────────── -->
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guide_avatar_top"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.10" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guide_avatar_bottom"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.52" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guide_card_bottom"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.80" />
+
+    <!-- ── Zone 1: Avatar visualizer ────────────────────────────────────── -->
+    <com.babelmic.app.ui.widget.AvatarVisualizerView
+        android:id="@+id/avatar_visualizer"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginHorizontal="24dp"
+        app:layout_constraintTop_toTopOf="@id/guide_avatar_top"
+        app:layout_constraintBottom_toTopOf="@id/tv_speaker_name"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Speaker name label -->
+    <TextView
+        android:id="@+id/tv_speaker_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="13sp"
+        android:textColor="@color/text_secondary"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@id/guide_avatar_bottom"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:text="Alice is speaking…" />
+
+    <!-- ── Zone 2: Yellow subtitle card ─────────────────────────────────── -->
+    <LinearLayout
+        android:id="@+id/subtitle_card"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        android:gravity="bottom"
+        android:padding="20dp"
+        android:background="@drawable/bg_subtitle_card"
+        android:layout_marginHorizontal="16dp"
+        app:layout_constraintTop_toTopOf="@id/guide_avatar_bottom"
+        app:layout_constraintBottom_toTopOf="@id/guide_card_bottom"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Previous / partial text — faded -->
+        <TextView
+            android:id="@+id/tv_previous_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textColor="@color/subtitle_text_previous"
+            android:maxLines="2"
+            android:ellipsize="start"
+            android:paddingBottom="4dp"
+            tools:text="unfamiliar with this" />
+
+        <!-- Current translation — bold -->
+        <TextView
+            android:id="@+id/tv_current_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/subtitle_text_current"
+            android:lineSpacingMultiplier="1.2"
+            tools:text="environment and I am confused, could you help me locate the nearest market?" />
+
+    </LinearLayout>
+
+    <!-- ── Zone 3: Mic FAB — circular, centre bottom ─────────────────────── -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_mic"
+        android:layout_width="@dimen/mic_button_size"
+        android:layout_height="@dimen/mic_button_size"
+        android:layout_marginBottom="32dp"
+        app:icon="@drawable/ic_mic"
+        app:iconSize="28dp"
+        app:iconGravity="textStart"
+        app:iconPadding="0dp"
+        app:backgroundTint="@color/mic_button_bg"
+        app:cornerRadius="36dp"
+        app:elevation="4dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Hidden status label (used programmatically for accessibility/debug) -->
+    <TextView
+        android:id="@+id/tv_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/btn_mic"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Hidden connection status (kept for programmatic updates) -->
     <TextView
         android:id="@+id/tv_connection_status"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:background="@drawable/bg_status_pill"
-        android:paddingHorizontal="12dp"
-        android:paddingVertical="4dp"
-        android:textSize="12sp"
-        android:textColor="@color/status_connected"
-        app:layout_constraintTop_toBottomOf="@id/toolbar"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        tools:text="Connected to partner" />
-
-    <!-- Conversation RecyclerView -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv_conversation"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginTop="4dp"
-        android:paddingHorizontal="8dp"
-        android:paddingBottom="8dp"
-        android:clipToPadding="false"
-        app:layout_constraintTop_toBottomOf="@id/tv_connection_status"
-        app:layout_constraintBottom_toTopOf="@id/bottom_panel"
-        app:layout_constraintStart_toStartOf="parent"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
-
-    <!-- Bottom panel: live caption + status + mic button + disconnect -->
-    <LinearLayout
-        android:id="@+id/bottom_panel"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:background="@color/surface"
-        android:elevation="8dp"
-        android:paddingTop="8dp"
-        android:paddingBottom="16dp"
-        android:paddingHorizontal="16dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <!-- Live caption (partial STT results) -->
-        <TextView
-            android:id="@+id/tv_live_caption"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="20dp"
-            android:textSize="13sp"
-            android:textColor="@color/text_secondary"
-            android:textStyle="italic"
-            android:gravity="center"
-            android:paddingBottom="4dp"
-            tools:text="Where is the train…" />
-
-        <!-- Status label (Ready / Listening / Translating) -->
-        <TextView
-            android:id="@+id/tv_status"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="12sp"
-            android:textColor="@color/text_hint"
-            android:gravity="center"
-            android:paddingBottom="8dp"
-            tools:text="Ready" />
-
-        <!-- Push-to-talk button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_mic"
-            android:layout_width="match_parent"
-            android:layout_height="@dimen/mic_button_height"
-            android:text="@string/btn_hold_to_speak"
-            style="@style/Widget.BabelMic.MicButton"
-            app:cornerRadius="32dp" />
-
-        <!-- Disconnect link-style button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_disconnect"
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:layout_marginTop="8dp"
-            android:text="@string/btn_disconnect"
-            android:textColor="@color/status_listening"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            app:cornerRadius="8dp" />
-
-    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

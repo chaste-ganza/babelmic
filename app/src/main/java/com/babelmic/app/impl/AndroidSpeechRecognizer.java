@@ -44,6 +44,11 @@ public class AndroidSpeechRecognizer implements SpeechRecognizer {
         void onListeningStarted();
         /** Called with partial (interim) recognition results as the user speaks. */
         void onPartialResult(String partial);
+        /**
+         * Called on every RMS change — use this to drive the avatar amplitude.
+         * Value is in dB, roughly in the range [-2, 10].
+         */
+        default void onRmsChanged(float rmsDb) {}
         /** Called with the final recognised text. */
         void onResult(String text);
         /** Called when recognition ends with an error. */
@@ -99,7 +104,9 @@ public class AndroidSpeechRecognizer implements SpeechRecognizer {
                 }
 
                 @Override
-                public void onRmsChanged(float rmsdB) { /* volume indicator — ignored */ }
+                public void onRmsChanged(float rmsdB) {
+                    if (callback != null) callback.onRmsChanged(rmsdB);
+                }
 
                 @Override
                 public void onBufferReceived(byte[] buffer) { /* raw audio buffer — ignored */ }

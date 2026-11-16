@@ -45,6 +45,12 @@ public class WifiDirectPeerConnection implements PeerConnection {
         void onConnectionLost(String reason);
     }
 
+    /** Called once after the TCP connection is established and the handshake completes. */
+    public interface HandshakeCallback {
+        /** @param peerProfileJson The raw JSON string sent by the peer. */
+        void onHandshakeComplete(String peerProfileJson);
+    }
+
     // ─── Fields ───────────────────────────────────────────────────────────────
 
     private final ExecutorService executor = Executors.newCachedThreadPool();
@@ -56,6 +62,8 @@ public class WifiDirectPeerConnection implements PeerConnection {
 
     private final AtomicBoolean connected = new AtomicBoolean(false);
     private volatile DataReceivedCallback dataCallback;
+    private volatile HandshakeCallback    handshakeCallback;
+    private volatile String               myProfileJson = null;
 
     private String peerAddress = null;
 
@@ -67,6 +75,19 @@ public class WifiDirectPeerConnection implements PeerConnection {
     /** @return the currently registered {@link DataReceivedCallback}. */
     public DataReceivedCallback getDataCallback() {
         return dataCallback;
+    }
+
+    /** Set the callback fired once the profile handshake completes. */
+    public void setHandshakeCallback(HandshakeCallback callback) {
+        this.handshakeCallback = callback;
+    }
+
+    /**
+     * Set the local profile JSON to send during the handshake.
+     * Must be called before {@link #startServer()} or {@link #connect(String)}.
+     */
+    public void setMyProfileJson(String profileJson) {
+        this.myProfileJson = profileJson;
     }
 
     // ─── Server side (group owner) ────────────────────────────────────────────
@@ -87,6 +108,7 @@ public class WifiDirectPeerConnection implements PeerConnection {
                 Log.d(TAG, "Client connected from: " + peerAddress);
 
                 initStreams();
+                performHandshake();
                 connected.set(true);
                 startReading();
 
@@ -145,6 +167,7 @@ public class WifiDirectPeerConnection implements PeerConnection {
 
             peerAddress = deviceId;
             initStreams();
+            performHandshake();
             connected.set(true);
             startReading();
 
@@ -197,6 +220,48 @@ public class WifiDirectPeerConnection implements PeerConnection {
     @Override
     public boolean isConnected() {
         return connected.get();
+    }
+
+    // ─── Handshake ────────────────────────────────────────────────────────────
+
+    /**
+     * Exchange profile JSON with the peer immediately after the socket connects.
+     * Both sides send their JSON first, then read the peer's JSON.
+     * Uses a 5-second timeout — if the peer doesn't respond, we continue anyway.
+     */
+    private void performHandshake() {
+        try {
+            // Send our profile
+            String outgoing = (myProfileJson != null && !myProfileJson.isEmpty())
+                    ? myProfileJson
+                    : "{\"n\":\"Unknown\",\"l\":\"en\",\"ln\":\"English\","
+                    + "\"s\":\"CIRCLE\",\"ct\":-16711681,\"cb\":-12236160}";
+
+            writer.println("HANDSHAKE:" + outgoing);
+            writer.flush();
+            Log.d(TAG, "Handshake sent");
+
+            // Read peer's profile — with timeout
+            socket.setSoTimeout(5000);
+            String line = reader.readLine();
+            try { socket.setSoTimeout(0); } catch (java.net.SocketException ignored) {}
+
+            if (line != null && line.startsWith("HANDSHAKE:")) {
+                String peerJson = line.substring("HANDSHAKE:".length());
+                Log.d(TAG, "Handshake received: " + peerJson);
+                if (handshakeCallback != null) {
+                    handshakeCallback.onHandshakeComplete(peerJson);
+                }
+            } else {
+                Log.w(TAG, "Unexpected handshake line: " + line);
+            }
+
+        } catch (java.net.SocketTimeoutException e) {
+            Log.w(TAG, "Handshake timed out — peer may be an older version");
+            try { socket.setSoTimeout(0); } catch (java.net.SocketException ignored) {}
+        } catch (IOException e) {
+            Log.e(TAG, "Handshake error", e);
+        }
     }
 
     // ─── Incoming message loop ────────────────────────────────────────────────

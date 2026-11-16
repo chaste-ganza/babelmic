@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Single shape option: a square tile containing a mini AvatarVisualizerView -->
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="56dp"
+    android:layout_height="56dp"
+    android:layout_margin="4dp"
+    android:background="@drawable/bg_shape_picker_item"
+    android:clickable="true"
+    android:focusable="true">
+
+    <com.babelmic.app.ui.widget.AvatarVisualizerView
+        android:id="@+id/shape_preview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="6dp" />
+
+</FrameLayout>

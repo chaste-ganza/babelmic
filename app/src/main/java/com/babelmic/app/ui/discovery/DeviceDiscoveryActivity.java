@@ -3,44 +3,46 @@ package com.babelmic.app.ui.discovery;
 import android.content.Intent;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.View;
-import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.babelmic.app.databinding.ActivityDeviceDiscoveryBinding;
-import com.babelmic.app.model.SessionConfig;
+import com.babelmic.app.model.AvatarShape;
+import com.babelmic.app.model.Language;
 import com.babelmic.app.network.WifiDirectManager;
-import com.babelmic.app.ui.conversation.ConversationActivity;
+import com.babelmic.app.ui.widget.PeerRadarView;
+import com.babelmic.app.util.LanguageManager;
+import com.babelmic.app.util.ProfileManager;
 
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
- * Shows nearby Wi-Fi Direct peers and lets the user tap one to connect.
- *
- * <p><b>Flow:</b>
- * <ol>
- *   <li>Activity starts → registers the BroadcastReceiver and starts peer discovery.</li>
- *   <li>As peers are found, {@link DeviceAdapter} populates the list.</li>
- *   <li>User taps a device → {@link WifiDirectManager#connectTo(WifiP2pDevice)} is called.</li>
- *   <li>When the P2P group forms, {@code onConnectionEstablished} fires and we
- *       navigate to {@link ConversationActivity}.</li>
- * </ol>
- * </p>
+ * Screen 4 — Find your peer.
+ * Shows a glowing radar field with floating peer avatar icons.
+ * User taps a peer to select it, then taps Confirm to send a connection request.
  */
 public class DeviceDiscoveryActivity extends AppCompatActivity
-        implements WifiDirectManager.WifiDirectCallback,
-                   DeviceAdapter.OnDeviceSelectedListener {
+        implements WifiDirectManager.WifiDirectCallback {
 
     private ActivityDeviceDiscoveryBinding binding;
     private WifiDirectManager wifiDirectManager;
-    private DeviceAdapter deviceAdapter;
 
-    // Language chosen on the previous screen
-    private String myLanguageTag;
-    private String myLanguageName;
+    // Map from Wi-Fi Direct device address → PeerRadarView.PeerNode
+    private final java.util.Map<String, PeerRadarView.PeerNode> peerNodeMap =
+            new java.util.HashMap<>();
+    // Map from PeerRadarView.PeerNode id → WifiP2pDevice
+    private final java.util.Map<String, WifiP2pDevice> deviceMap =
+            new java.util.HashMap<>();
+
+    private PeerRadarView.PeerNode pendingSelectedNode = null;
+    private String                 peerIpAddress       = null;
+    private boolean                isGroupOwner        = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,42 +50,48 @@ public class DeviceDiscoveryActivity extends AppCompatActivity
         binding = ActivityDeviceDiscoveryBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        // Retrieve language from intent
-        myLanguageTag  = getIntent().getStringExtra(SessionConfig.EXTRA_MY_LANGUAGE_TAG);
-        myLanguageName = getIntent().getStringExtra(SessionConfig.EXTRA_MY_LANGUAGE_NAME);
-
-        setupToolbar();
-        setupRecyclerView();
+        setupMyAvatar();
+        setupRadar();
+        setupButtons();
         setupWifiDirect();
-        setupRefreshButton();
     }
 
     // ─── Setup ────────────────────────────────────────────────────────────────
 
-    private void setupToolbar() {
-        setSupportActionBar(binding.toolbar);
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setTitle("Find a Partner");
-        }
-        binding.tvYourLanguage.setText("Your language: " + myLanguageName);
+    private void setupMyAvatar() {
+        Language myLang = LanguageManager.findByTag(ProfileManager.getLanguageTag(this));
+        String flag = (myLang != null) ? myLang.getFlagEmoji() : "🌐";
+
+        binding.peerRadar.setMyAvatar(
+                ProfileManager.getAvatarShape(this),
+                ProfileManager.getColorTop(this),
+                flag);
     }
 
-    private void setupRecyclerView() {
-        deviceAdapter = new DeviceAdapter(this);
-        binding.rvDevices.setLayoutManager(new LinearLayoutManager(this));
-        binding.rvDevices.setAdapter(deviceAdapter);
+    private void setupRadar() {
+        binding.peerRadar.setOnPeerTappedListener(peer -> {
+            pendingSelectedNode = peer;
+            binding.btnConfirm.setEnabled(peer != null);
+        });
+    }
+
+    private void setupButtons() {
+        binding.btnBack.setOnClickListener(v -> onBackPressed());
+
+        binding.btnConfirm.setEnabled(false);
+        binding.btnConfirm.setOnClickListener(v -> {
+            if (pendingSelectedNode == null) return;
+            WifiP2pDevice device = deviceMap.get(pendingSelectedNode.id);
+            if (device != null) {
+                wifiDirectManager.connectTo(device);
+                binding.btnConfirm.setEnabled(false);
+                binding.btnConfirm.setText("Connecting…");
+            }
+        });
     }
 
     private void setupWifiDirect() {
         wifiDirectManager = new WifiDirectManager(this, this);
-    }
-
-    private void setupRefreshButton() {
-        binding.btnRefresh.setOnClickListener(v -> {
-            showScanning(true);
-            wifiDirectManager.startDiscovery();
-        });
     }
 
     // ─── Lifecycle ────────────────────────────────────────────────────────────
@@ -92,7 +100,6 @@ public class DeviceDiscoveryActivity extends AppCompatActivity
     protected void onResume() {
         super.onResume();
         wifiDirectManager.register();
-        showScanning(true);
         wifiDirectManager.startDiscovery();
     }
 
@@ -103,93 +110,93 @@ public class DeviceDiscoveryActivity extends AppCompatActivity
         wifiDirectManager.unregister();
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        // Don't disconnect here — connection must survive the transition to ConversationActivity
-    }
-
     // ─── WifiDirectCallback ───────────────────────────────────────────────────
 
     @Override
     public void onWifiDirectAvailabilityChanged(boolean available) {
         runOnUiThread(() -> {
             if (!available) {
-                showError("Wi-Fi Direct is not available on this device.");
+                new AlertDialog.Builder(this)
+                        .setTitle("Wi-Fi Direct Unavailable")
+                        .setMessage("Enable Wi-Fi to find nearby partners.")
+                        .setPositiveButton("Open Settings",
+                                (d, w) -> startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS)))
+                        .setNegativeButton("Cancel", null).show();
             }
         });
     }
 
     @Override
-    public void onPeersDiscovered(List<WifiP2pDevice> peers) {
+    public void onPeersDiscovered(List<WifiP2pDevice> devices) {
         runOnUiThread(() -> {
-            showScanning(false);
-            deviceAdapter.updateDevices(peers);
-            binding.tvNoPeers.setVisibility(peers.isEmpty() ? View.VISIBLE : View.GONE);
+            deviceMap.clear();
+            peerNodeMap.clear();
+
+            List<PeerRadarView.PeerNode> nodes = new ArrayList<>();
+            Random rng = new Random();
+
+            for (WifiP2pDevice device : devices) {
+                // Position peers randomly within the radar field
+                double angle = rng.nextDouble() * 2 * Math.PI;
+                float dist   = 0.4f + rng.nextFloat() * 0.45f;
+                float nx     = (float)(dist * Math.cos(angle));
+                float ny     = (float)(dist * Math.sin(angle));
+
+                PeerRadarView.PeerNode node = new PeerRadarView.PeerNode(
+                        device.deviceAddress,
+                        device.deviceName.isEmpty() ? "Partner" : device.deviceName,
+                        "🌐",         // flag updated after handshake
+                        AvatarShape.CIRCLE,
+                        0xFF5B21F5,   // default colour, updated after handshake
+                        nx, ny);
+
+                nodes.add(node);
+                peerNodeMap.put(device.deviceAddress, node);
+                deviceMap.put(device.deviceAddress,   device);
+            }
+
+            binding.peerRadar.setPeers(nodes);
+            binding.btnConfirm.setEnabled(false);
+            pendingSelectedNode = null;
         });
     }
 
     @Override
     public void onConnectionEstablished(InetAddress groupOwnerAddress, boolean isGroupOwner) {
         runOnUiThread(() -> {
-            binding.layoutConnecting.setVisibility(View.GONE);
-            navigateToConversation(groupOwnerAddress.getHostAddress(), isGroupOwner);
+            this.peerIpAddress = groupOwnerAddress.getHostAddress();
+            this.isGroupOwner  = isGroupOwner;
+
+            // Navigate to PendingRequestActivity to show the "waiting for peer" screen
+            Intent intent = new Intent(this, PendingRequestActivity.class);
+            intent.putExtra("peer_name",
+                    pendingSelectedNode != null ? pendingSelectedNode.name : "Partner");
+            intent.putExtra("is_group_owner", isGroupOwner);
+            intent.putExtra("peer_ip",        this.peerIpAddress);
+            startActivity(intent);
+            binding.btnConfirm.setText("Confirm");
+            binding.btnConfirm.setEnabled(false);
         });
     }
 
     @Override
     public void onDisconnected() {
         runOnUiThread(() -> {
-            binding.layoutConnecting.setVisibility(View.GONE);
-            Toast.makeText(this, "Disconnected", Toast.LENGTH_SHORT).show();
+            binding.btnConfirm.setText("Confirm");
+            binding.btnConfirm.setEnabled(pendingSelectedNode != null);
         });
     }
 
     @Override
     public void onError(String message) {
         runOnUiThread(() -> {
-            binding.layoutConnecting.setVisibility(View.GONE);
-            showError(message);
+            binding.btnConfirm.setText("Confirm");
+            binding.btnConfirm.setEnabled(pendingSelectedNode != null);
+            new AlertDialog.Builder(this)
+                    .setTitle("Connection Failed")
+                    .setMessage(message + "\n\nMake sure both devices have Wi-Fi on.")
+                    .setPositiveButton("Retry", (d, w) -> wifiDirectManager.startDiscovery())
+                    .setNegativeButton("Cancel", null).show();
         });
-    }
-
-    // ─── DeviceAdapter callback ───────────────────────────────────────────────
-
-    @Override
-    public void onDeviceSelected(WifiP2pDevice device) {
-        binding.layoutConnecting.setVisibility(View.VISIBLE);
-        binding.tvConnectingTo.setText("Connecting to " + device.deviceName + "…");
-        wifiDirectManager.connectTo(device);
-    }
-
-    // ─── Navigation ───────────────────────────────────────────────────────────
-
-    private void navigateToConversation(String peerIp, boolean isGroupOwner) {
-        Intent intent = new Intent(this, ConversationActivity.class);
-        intent.putExtra(SessionConfig.EXTRA_MY_LANGUAGE_TAG,  myLanguageTag);
-        intent.putExtra(SessionConfig.EXTRA_MY_LANGUAGE_NAME, myLanguageName);
-        intent.putExtra(SessionConfig.EXTRA_IS_GROUP_OWNER,   isGroupOwner);
-        intent.putExtra(SessionConfig.EXTRA_PEER_IP_ADDRESS,  peerIp);
-        startActivity(intent);
-        // Keep this activity alive so the user can go back and re-discover if needed
-    }
-
-    // ─── UI helpers ───────────────────────────────────────────────────────────
-
-    private void showScanning(boolean scanning) {
-        binding.layoutScanning.setVisibility(scanning ? View.VISIBLE : View.GONE);
-        if (scanning) {
-            binding.tvNoPeers.setVisibility(View.GONE);
-        }
-    }
-
-    private void showError(String message) {
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
-    }
-
-    @Override
-    public boolean onSupportNavigateUp() {
-        onBackPressed();
-        return true;
     }
 }

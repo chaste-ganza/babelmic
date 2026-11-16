@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Single shape option card in the avatar shape picker grid.
+    Selected state is driven by setSelected(true) from the adapter.
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="80dp"
+    android:layout_height="80dp"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="@drawable/bg_shape_item"
+    android:clickable="true"
+    android:focusable="true"
+    android:layout_margin="6dp">
+
+    <!-- Mini live preview of the visualizer in this shape -->
+    <com.babelmic.app.ui.widget.AvatarVisualizerView
+        android:id="@+id/avatar_preview"
+        android:layout_width="52dp"
+        android:layout_height="40dp" />
+
+    <TextView
+        android:id="@+id/tv_shape_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textSize="10sp"
+        android:textColor="@color/text_secondary"
+        tools:text="Heart" />
+
+</LinearLayout>

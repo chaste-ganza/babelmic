@@ -1,31 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- ─── Microphone ─── -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-
-    <!-- ─── Wi-Fi Direct (P2P) ─── -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES"
         android:usesPermissionFlags="neverForLocation" />
-
-    <!-- ─── Network sockets (data relay over Wi-Fi Direct) ─── -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
-
-    <!-- ─── Wake lock (keep CPU alive during active session) ─── -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    <!-- Hardware features (optional so non-Wi-Fi devices can still install) -->
-    <uses-feature
-        android:name="android.hardware.wifi.direct"
-        android:required="false" />
-    <uses-feature
-        android:name="android.hardware.microphone"
-        android:required="true" />
+    <uses-feature android:name="android.hardware.wifi.direct" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone"  android:required="true" />
 
     <application
         android:allowBackup="true"
@@ -36,9 +24,9 @@
         android:theme="@style/Theme.BabelMic"
         android:hardwareAccelerated="true">
 
-        <!-- ─── Language Selection (launcher) ─── -->
+        <!-- ─── LAUNCHER: Username entry (first run) ─── -->
         <activity
-            android:name=".ui.language.LanguageSelectionActivity"
+            android:name=".ui.onboarding.UsernameActivity"
             android:exported="true"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="stateHidden|adjustResize">
@@ -48,9 +36,34 @@
             </intent-filter>
         </activity>
 
-        <!-- ─── Device Discovery ─── -->
+        <!-- ─── Avatar setup ─── -->
+        <activity
+            android:name=".ui.profile.ProfileSetupActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- ─── Language selection ─── -->
+        <activity
+            android:name=".ui.language.LanguageSelectionActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
+
+        <!-- ─── Device discovery ─── -->
         <activity
             android:name=".ui.discovery.DeviceDiscoveryActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- ─── Pending connection request ─── -->
+        <activity
+            android:name=".ui.discovery.PendingRequestActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- ─── Incoming connection request ─── -->
+        <activity
+            android:name=".ui.discovery.IncomingRequestActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
 
