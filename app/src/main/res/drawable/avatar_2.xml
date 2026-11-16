@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Avatar 2: Cool — blue circle with sunglasses -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="80dp" android:height="80dp"
+    android:viewportWidth="80" android:viewportHeight="80">
+    <!-- Face -->
+    <path android:fillColor="#4FC3F7" android:pathData="M40,8 A32,32 0 1,1 39.99,8 Z"/>
+    <!-- Sunglass frame -->
+    <path android:fillColor="#222222"
+        android:pathData="M16,30 L64,30 L64,33 L16,33 Z"/>
+    <!-- Left lens -->
+    <path android:fillColor="#222222" android:pathData="M18,27 A11,8 0 1,1 17.99,27 Z"/>
+    <!-- Right lens -->
+    <path android:fillColor="#222222" android:pathData="M51,27 A11,8 0 1,1 50.99,27 Z"/>
+    <!-- Mouth -->
+    <path android:fillColor="@android:color/transparent"
+        android:strokeColor="#333333" android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M30,52 Q40,58 50,52"/>
+</vector>

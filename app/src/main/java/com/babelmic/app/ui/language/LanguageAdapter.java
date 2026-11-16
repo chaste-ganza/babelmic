@@ -16,7 +16,14 @@ import java.util.List;
 
 /**
  * RecyclerView adapter for the language selection list.
- * Shows: flag emoji | language name (bold) | native name | check on selected row.
+ *
+ * <p>Selection feedback:
+ * <ul>
+ *   <li>Selected row gets a light purple background (via {@code state_activated}).</li>
+ *   <li>A purple checkmark appears on the right.</li>
+ *   <li>Previously selected row is explicitly de-highlighted via {@link #notifyItemChanged}.</li>
+ * </ul>
+ * </p>
  */
 public class LanguageAdapter extends RecyclerView.Adapter<LanguageAdapter.LangViewHolder> {
 
@@ -33,6 +40,7 @@ public class LanguageAdapter extends RecyclerView.Adapter<LanguageAdapter.LangVi
         this.listener  = listener;
     }
 
+    /** Replace dataset (used by search filter). Clears selection. */
     public void updateList(List<Language> newList) {
         this.languages       = newList;
         this.selectedPosition = -1;
@@ -48,17 +56,27 @@ public class LanguageAdapter extends RecyclerView.Adapter<LanguageAdapter.LangVi
 
     @Override
     public void onBindViewHolder(@NonNull LangViewHolder h, int position) {
-        Language lang = languages.get(position);
+        Language lang    = languages.get(position);
+        boolean selected = position == selectedPosition;
+
         h.tvFlag.setText(lang.getFlagEmoji());
         h.tvName.setText(lang.getDisplayName());
         h.tvNative.setText(lang.getNativeName());
-        h.ivSelected.setVisibility(position == selectedPosition ? View.VISIBLE : View.GONE);
+
+        // Drive both the background selector and the checkmark
+        h.itemView.setActivated(selected);
+        h.ivSelected.setVisibility(selected ? View.VISIBLE : View.GONE);
 
         h.itemView.setOnClickListener(v -> {
             int prev        = selectedPosition;
             selectedPosition = h.getAdapterPosition();
-            notifyItemChanged(prev);
+
+            // Redraw the previously selected row to remove its highlight
+            if (prev != -1 && prev != selectedPosition) {
+                notifyItemChanged(prev);
+            }
             notifyItemChanged(selectedPosition);
+
             listener.onLanguageSelected(lang);
         });
     }

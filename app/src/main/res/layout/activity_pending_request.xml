@@ -101,19 +101,48 @@
     <View android:layout_width="match_parent" android:layout_height="0dp"
         android:layout_weight="2" />
 
-    <!-- Revoke button -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_revoke"
+    <!-- Revoke + Confirm buttons side by side -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="@dimen/button_height"
+        android:orientation="horizontal"
         android:layout_marginHorizontal="24dp"
         android:layout_marginBottom="32dp"
-        android:text="Revoke"
-        android:textColor="@color/text_on_primary"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        app:backgroundTint="@color/babelmic_primary"
-        app:cornerRadius="@dimen/button_corner"
-        app:elevation="0dp" />
+        android:weightSum="2">
+
+        <!-- Revoke — outlined, goes back to discovery -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_revoke"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:text="Revoke"
+            android:textColor="@color/babelmic_primary"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:backgroundTint="@android:color/transparent"
+            app:strokeColor="@color/babelmic_primary"
+            app:strokeWidth="2dp"
+            app:cornerRadius="@dimen/button_corner"
+            app:elevation="0dp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+        <!-- Confirm — filled, enters conversation -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_confirm"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="Confirm"
+            android:textColor="@color/text_on_primary"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:backgroundTint="@color/babelmic_primary"
+            app:cornerRadius="@dimen/button_corner"
+            app:elevation="0dp" />
+
+    </LinearLayout>
 
 </LinearLayout>

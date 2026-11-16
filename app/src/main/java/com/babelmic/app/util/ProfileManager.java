@@ -23,12 +23,20 @@ import com.babelmic.app.model.AvatarShape;
 public final class ProfileManager {
 
     private static final String PREFS_NAME       = "babelmic_profile";
+
+    // ─── Profile version ─────────────────────────────────────────────────────
+    // Bump this whenever the profile schema changes in a breaking way.
+    // On mismatch the stored profile is wiped and the user goes through onboarding.
+    private static final int    CURRENT_PROFILE_VERSION = 2; // 2 = avatar image system
+    private static final String KEY_PROFILE_VERSION     = "profile_version";
+
     private static final String KEY_NAME         = "display_name";
     private static final String KEY_LANGUAGE_TAG = "language_tag";
     private static final String KEY_LANGUAGE_NAME= "language_name";
     private static final String KEY_SHAPE        = "avatar_shape";
     private static final String KEY_COLOR_TOP    = "avatar_color_top";
     private static final String KEY_COLOR_BOTTOM = "avatar_color_bottom";
+    private static final String KEY_AVATAR_RES   = "avatar_res_id";
     private static final String KEY_SETUP_DONE   = "setup_complete";
 
     // Defaults
@@ -42,14 +50,36 @@ public final class ProfileManager {
 
     // ─── Setup complete flag ──────────────────────────────────────────────────
 
-    /** @return true if the user has completed profile setup at least once. */
+    /**
+     * Checks if setup is complete AND the saved profile version matches the
+     * current app version. If versions differ, clears stale data automatically.
+     *
+     * @return true if the profile is valid and setup should be skipped.
+     */
     public static boolean isSetupComplete(Context ctx) {
+        int savedVersion = prefs(ctx).getInt(KEY_PROFILE_VERSION, 0);
+        if (savedVersion != CURRENT_PROFILE_VERSION) {
+            // Profile from an older schema — clear it and force re-onboarding
+            clearProfile(ctx);
+            return false;
+        }
         return prefs(ctx).getBoolean(KEY_SETUP_DONE, false);
     }
 
-    /** Mark profile setup as complete. Called after the user taps "Find Partner". */
+    /**
+     * Wipes all stored profile data. The user will see the full onboarding flow
+     * on next launch.
+     */
+    public static void clearProfile(Context ctx) {
+        prefs(ctx).edit().clear().apply();
+    }
+
+    /** Mark profile setup as complete with the current version stamp. */
     public static void markSetupComplete(Context ctx) {
-        prefs(ctx).edit().putBoolean(KEY_SETUP_DONE, true).apply();
+        prefs(ctx).edit()
+                .putBoolean(KEY_SETUP_DONE, true)
+                .putInt(KEY_PROFILE_VERSION, CURRENT_PROFILE_VERSION)
+                .apply();
     }
 
     /**
@@ -65,15 +95,16 @@ public final class ProfileManager {
      *   language   = preserved as-is (set when user picks language)
      */
     public static void ensureDefaultProfile(Context ctx) {
+        // Only create silent defaults if setup has NEVER been done.
+        // Do NOT mark setup as complete — that must only happen after the user
+        // explicitly completes onboarding (Username + Avatar + Language screens).
         if (isSetupComplete(ctx)) return;
         prefs(ctx).edit()
-                .putString(KEY_NAME,          "User")
-                .putString(KEY_SHAPE,         AvatarShape.CIRCLE.name())
-                .putInt(KEY_COLOR_TOP,        DEFAULT_COLOR_TOP)
-                .putInt(KEY_COLOR_BOTTOM,     DEFAULT_COLOR_BOTTOM)
-                // language tag/name are set when the user picks their language
-                // so we don't overwrite them here if already set
-                .putBoolean(KEY_SETUP_DONE,   true)
+                .putString(KEY_NAME,         "User")
+                .putString(KEY_SHAPE,        AvatarShape.CIRCLE.name())
+                .putInt(KEY_COLOR_TOP,       DEFAULT_COLOR_TOP)
+                .putInt(KEY_COLOR_BOTTOM,    DEFAULT_COLOR_BOTTOM)
+                // Do NOT set KEY_SETUP_DONE — user hasn't completed onboarding yet
                 .apply();
     }
 
@@ -108,6 +139,11 @@ public final class ProfileManager {
         return prefs(ctx).getInt(KEY_COLOR_BOTTOM, DEFAULT_COLOR_BOTTOM);
     }
 
+    /** Resource ID of the selected avatar drawable, e.g. R.drawable.avatar_1 */
+    public static int getAvatarResId(Context ctx) {
+        return prefs(ctx).getInt(KEY_AVATAR_RES, 0);
+    }
+
     // ─── Setters ─────────────────────────────────────────────────────────────
 
     public static void setDisplayName(Context ctx, String name) {
@@ -132,6 +168,10 @@ public final class ProfileManager {
                 .apply();
     }
 
+    public static void setAvatarResId(Context ctx, int resId) {
+        prefs(ctx).edit().putInt(KEY_AVATAR_RES, resId).apply();
+    }
+
     /**
      * Save the entire profile in one atomic write.
      */
@@ -150,6 +190,7 @@ public final class ProfileManager {
                 .putInt(KEY_COLOR_TOP,        colorTop)
                 .putInt(KEY_COLOR_BOTTOM,     colorBottom)
                 .putBoolean(KEY_SETUP_DONE,   true)
+                .putInt(KEY_PROFILE_VERSION,  CURRENT_PROFILE_VERSION)
                 .apply();
     }
 

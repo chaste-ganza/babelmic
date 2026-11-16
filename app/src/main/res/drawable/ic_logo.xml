@@ -1,30 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    BabelMic cursive "B" logo — hand-drawn style vector path.
-    Sized at 64×64dp, black stroke on transparent background.
+    BabelMic logo placeholder vector.
+    Replace by placing your PNG at: res/drawable-nodpi/ic_logo.png
+    Android will automatically prefer the PNG over this XML file.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="64dp"
     android:height="64dp"
-    android:viewportWidth="64"
-    android:viewportHeight="64">
+    android:viewportWidth="100"
+    android:viewportHeight="100">
 
-    <!-- Cursive B body — two lobes + descending tail -->
+    <!--
+        Cursive B — two strokes:
+        1. Ascending tail + upper bowl (top half of the character)
+        2. Lower wider bowl (bottom half)
+        Both drawn as thick filled strokes to match the bold hand-drawn style.
+    -->
+
+    <!-- Upper stroke: hook entry → upper bowl -->
     <path
         android:fillColor="@android:color/transparent"
         android:strokeColor="#111111"
-        android:strokeWidth="3.5"
+        android:strokeWidth="11"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
         android:pathData="
-            M 20,52
-            C 14,48 12,40 16,33
-            C 20,26 28,24 32,22
-            C 28,18 24,12 28,8
-            C 32,4 40,6 42,12
-            C 44,18 38,24 32,22
-            C 36,24 44,28 44,34
-            C 44,40 38,46 32,46
-            C 26,46 22,42 20,38
-            C 18,34 20,28 24,26" />
+            M 20,78
+            C 16,70 15,60 18,51
+            C 21,42 28,35 36,30
+            C 30,25 24,18 24,11
+            C 24,6  28,3  33,4
+            C 38,5  41,10 38,15
+            C 36,19 32,20 36,22
+            C 44,25 54,30 60,38
+            C 66,46 65,57 59,64
+            C 53,71 44,74 35,73
+            C 30,72 25,76 22,80
+        " />
+
+    <!-- Lower bowl curves further right than upper -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#111111"
+        android:strokeWidth="11"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="
+            M 36,30
+            C 48,30 62,34 68,43
+            C 74,52 70,65 62,71
+            C 54,77 43,78 33,76
+        " />
+
 </vector>

@@ -107,9 +107,11 @@ public class LanguageSelectionActivity extends AppCompatActivity
     }
 
     private void navigateToDiscovery() {
+        // Mark setup fully complete only now — user has gone through all onboarding steps
         ProfileManager.setLanguage(this,
                 selectedLanguage.getBcp47Tag(),
                 selectedLanguage.getDisplayName());
+        ProfileManager.markSetupComplete(this);
 
         Intent intent = new Intent(this, DeviceDiscoveryActivity.class);
         intent.putExtra(SessionConfig.EXTRA_MY_LANGUAGE_TAG,  selectedLanguage.getBcp47Tag());

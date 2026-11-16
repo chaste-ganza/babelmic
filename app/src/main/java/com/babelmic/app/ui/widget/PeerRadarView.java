@@ -7,7 +7,6 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RadialGradient;
-import android.graphics.RectF;
 import android.graphics.Shader;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -24,13 +23,17 @@ import java.util.List;
 
 /**
  * Custom view that renders the peer discovery field:
- * - Two soft concentric glowing rings (warm yellow/orange gradient)
- * - "You" avatar icon pinned at the centre
- * - Peer avatar icons floating at defined positions
- * - Tap a peer to select it (highlighted ring); tap again or tap empty to deselect
  *
- * <p>All drawing is done on Canvas. Peer positions are expressed as
- * normalised (x, y) coordinates in [-1, 1] relative to the view centre.</p>
+ * <h3>Visual design</h3>
+ * <ul>
+ *   <li>Multiple concentric rings expand outward from the centre and fade to
+ *       transparent — a classic sonar / radar wave effect.</li>
+ *   <li>Three rings are staggered evenly in time so at least one is always
+ *       mid-expansion.</li>
+ *   <li>"You" avatar sits at the centre.</li>
+ *   <li>Peer avatar icons float at their assigned positions.</li>
+ *   <li>Tapping a peer selects it (purple outline); tapping again deselects.</li>
+ * </ul>
  */
 public class PeerRadarView extends View {
 
@@ -38,12 +41,11 @@ public class PeerRadarView extends View {
 
     public static class PeerNode {
         public final String id;
-        public final String name;
-        public final String flagEmoji;
+        public       String name;
+        public       String flagEmoji;
         public final AvatarShape shape;
         public final int   color;
-        /** Normalised position: -1=left/top, 0=centre, 1=right/bottom */
-        public float nx, ny;
+        public float nx, ny;  // normalised position in [-1, 1]
 
         public PeerNode(String id, String name, String flagEmoji,
                         AvatarShape shape, int color, float nx, float ny) {
@@ -58,9 +60,13 @@ public class PeerRadarView extends View {
     }
 
     public interface OnPeerTappedListener {
-        /** @param peer  The peer that was tapped, or null if selection cleared. */
         void onPeerTapped(@Nullable PeerNode peer);
     }
+
+    // ─── Wave ring constants ──────────────────────────────────────────────────
+    private static final int   RING_COUNT        = 3;
+    private static final long  WAVE_CYCLE_MS     = 2400L;   // one ring full expansion
+    private static final float RING_MAX_ALPHA    = 0.55f;   // opacity at start of expansion
 
     // ─── Fields ───────────────────────────────────────────────────────────────
 
@@ -69,9 +75,9 @@ public class PeerRadarView extends View {
     private OnPeerTappedListener tapListener;
 
     // "You" node
-    private AvatarShape myShape    = AvatarShape.CIRCLE;
-    private int         myColor    = Color.parseColor("#5B21F5");
-    private String      myFlag     = "🌐";
+    private AvatarShape myShape = AvatarShape.CIRCLE;
+    private int         myColor = Color.parseColor("#5B21F5");
+    private String      myFlag  = "🌐";
 
     // Paints
     private final Paint ringPaint      = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -81,13 +87,12 @@ public class PeerRadarView extends View {
     private final Paint namePaint      = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint selectionPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
-    // Pulse animation
-    private float pulseScale = 1f;
-    private ValueAnimator pulseAnimator;
+    // Wave animation — single animator driving a phase value [0, 1)
+    private ValueAnimator waveAnimator;
+    private float         wavePhase = 0f;  // advances 0→1 each WAVE_CYCLE_MS
 
     // Geometry
-    private float cx, cy, outerR, innerR;
-    private float iconR;    // radius of each avatar icon circle
+    private float cx, cy, maxR, iconR;
 
     // ─── Constructors ─────────────────────────────────────────────────────────
 
@@ -102,6 +107,8 @@ public class PeerRadarView extends View {
     }
 
     private void init() {
+        ringPaint.setStyle(Paint.Style.STROKE);
+
         badgeBgPaint.setStyle(Paint.Style.FILL);
         badgeBgPaint.setColor(Color.WHITE);
 
@@ -113,8 +120,6 @@ public class PeerRadarView extends View {
         selectionPaint.setStyle(Paint.Style.STROKE);
         selectionPaint.setColor(Color.parseColor("#5B21F5"));
         selectionPaint.setStrokeWidth(3f);
-
-        startPulse();
     }
 
     // ─── Public API ───────────────────────────────────────────────────────────
@@ -142,100 +147,95 @@ public class PeerRadarView extends View {
     // ─── Lifecycle ────────────────────────────────────────────────────────────
 
     @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        startWaveAnimation();
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        stopWaveAnimation();
+    }
+
+    @Override
     protected void onSizeChanged(int w, int h, int ow, int oh) {
-        cx      = w / 2f;
-        cy      = h / 2f;
-        outerR  = Math.min(w, h) * 0.46f;
-        innerR  = outerR * 0.52f;
-        iconR   = outerR * 0.13f;
+        cx    = w / 2f;
+        cy    = h / 2f;
+        maxR  = Math.min(w, h) * 0.46f;
+        iconR = maxR * 0.14f;
 
         float density = getResources().getDisplayMetrics().density;
         namePaint.setTextSize(11f * density);
         textPaint.setTextSize(iconR * 1.1f);
+        ringPaint.setStrokeWidth(2.5f * density);
     }
 
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
-        drawRings(canvas);
+        drawWaveRings(canvas);
         drawPeers(canvas);
         drawMyIcon(canvas);
     }
 
-    // ─── Ring drawing ─────────────────────────────────────────────────────────
+    // ─── Wave rings ───────────────────────────────────────────────────────────
 
-    private void drawRings(Canvas canvas) {
-        // Outer glow ring
-        RadialGradient outerGrad = new RadialGradient(cx, cy,
-                outerR * pulseScale,
-                new int[]{0x00FFE082, 0x33FFE082, 0x66FFF3CD, 0xAAFFEB00},
-                new float[]{0f, 0.3f, 0.65f, 1f},
-                Shader.TileMode.CLAMP);
-        ringPaint.setShader(outerGrad);
-        canvas.drawCircle(cx, cy, outerR * pulseScale, ringPaint);
+    /**
+     * Draw RING_COUNT rings, each staggered by 1/RING_COUNT of the cycle.
+     * Ring i has phase = (wavePhase + i/RING_COUNT) mod 1.
+     * Radius = phase × maxR, alpha = (1 - phase) × RING_MAX_ALPHA.
+     */
+    private void drawWaveRings(Canvas canvas) {
+        for (int i = 0; i < RING_COUNT; i++) {
+            float phase = (wavePhase + (float) i / RING_COUNT) % 1f;
+            float r     = phase * maxR;
+            float alpha = (1f - phase) * RING_MAX_ALPHA;
 
-        // Inner glow ring
-        RadialGradient innerGrad = new RadialGradient(cx, cy,
-                innerR,
-                new int[]{0x00FFD740, 0x55FFD740, 0xBBFFEB00},
-                new float[]{0f, 0.5f, 1f},
-                Shader.TileMode.CLAMP);
-        ringPaint.setShader(innerGrad);
-        canvas.drawCircle(cx, cy, innerR, ringPaint);
+            if (r < 2f) continue; // skip tiny rings at start
+
+            // Warm yellow ring colour matching the mockup
+            int ringColor = Color.argb(
+                    (int)(alpha * 255),
+                    0xFF, 0xD7, 0x40);  // #FFD740
+
+            ringPaint.setColor(ringColor);
+            canvas.drawCircle(cx, cy, r, ringPaint);
+        }
     }
 
     // ─── Peer icons ───────────────────────────────────────────────────────────
 
     private void drawPeers(Canvas canvas) {
         for (PeerNode peer : peers) {
-            float px = cx + peer.nx * outerR * 0.75f;
-            float py = cy + peer.ny * outerR * 0.75f;
-
-            boolean isSelected = peer == selectedPeer;
+            float px = cx + peer.nx * maxR * 0.75f;
+            float py = cy + peer.ny * maxR * 0.75f;
 
             // Selection ring
-            if (isSelected) {
-                canvas.drawCircle(px, py, iconR + 6f, selectionPaint);
+            if (peer == selectedPeer) {
+                canvas.drawCircle(px, py, iconR + 7f, selectionPaint);
             }
 
-            // Shape fill
             shapePaint.setColor(peer.color);
             drawAvatarShape(canvas, peer.shape, px, py, iconR);
+            drawFlagBadge(canvas, px, py, iconR, peer.flagEmoji);
 
-            // Flag badge (top-right)
-            float badgeR = iconR * 0.45f;
-            float bx = px + iconR * 0.65f;
-            float by = py - iconR * 0.65f;
-            canvas.drawCircle(bx, by, badgeR + 2f, badgeBgPaint);
-            textPaint.setTextSize(badgeR * 1.3f);
-            float ty = by - (textPaint.descent() + textPaint.ascent()) / 2f;
-            canvas.drawText(peer.flagEmoji, bx, ty, textPaint);
-
-            // Name label below icon
-            float nameY = py + iconR + namePaint.getTextSize() + 4f;
-            canvas.drawText(peer.name, px, nameY, namePaint);
+            // Name label
+            canvas.drawText(peer.name, px,
+                    py + iconR + namePaint.getTextSize() + 4f, namePaint);
         }
     }
 
-    // ─── My icon (centre) ─────────────────────────────────────────────────────
+    // ─── My icon ─────────────────────────────────────────────────────────────
 
     private void drawMyIcon(Canvas canvas) {
         shapePaint.setColor(myColor);
         drawAvatarShape(canvas, myShape, cx, cy, iconR);
-
-        // Flag badge
-        float badgeR = iconR * 0.45f;
-        float bx = cx + iconR * 0.65f;
-        float by = cy - iconR * 0.65f;
-        canvas.drawCircle(bx, by, badgeR + 2f, badgeBgPaint);
-        textPaint.setTextSize(badgeR * 1.3f);
-        float ty = by - (textPaint.descent() + textPaint.ascent()) / 2f;
-        canvas.drawText(myFlag, bx, ty, textPaint);
-
-        // "You" label
-        canvas.drawText("You", cx, cy + iconR + namePaint.getTextSize() + 4f, namePaint);
+        drawFlagBadge(canvas, cx, cy, iconR, myFlag);
+        canvas.drawText("You", cx,
+                cy + iconR + namePaint.getTextSize() + 4f, namePaint);
     }
 
-    // ─── Shape drawing ────────────────────────────────────────────────────────
+    // ─── Shape + badge helpers ────────────────────────────────────────────────
 
     private void drawAvatarShape(Canvas canvas, AvatarShape shape,
                                   float px, float py, float r) {
@@ -259,15 +259,28 @@ public class PeerRadarView extends View {
         }
     }
 
+    private void drawFlagBadge(Canvas canvas, float px, float py,
+                                float r, String flag) {
+        float badgeR = r * 0.44f;
+        float bx = px + r * 0.65f;
+        float by = py - r * 0.65f;
+        canvas.drawCircle(bx, by, badgeR + 2f, badgeBgPaint);
+        textPaint.setTextSize(badgeR * 1.3f);
+        float ty = by - (textPaint.descent() + textPaint.ascent()) / 2f;
+        canvas.drawText(flag, bx, ty, textPaint);
+    }
+
+    // ─── Path helpers ─────────────────────────────────────────────────────────
+
     private static Path heartPath(float cx, float cy, float r) {
         float w = r * 2f, h = r * 2f;
         float x = cx - r, y = cy - r * 0.8f;
         Path p = new Path();
-        p.moveTo(x + w / 2f, y + h * 0.25f);
-        p.cubicTo(x + w/2f, y, x, y, x, y + h * 0.25f);
-        p.cubicTo(x, y + h*0.6f, x + w/2f, y + h*0.75f, x + w/2f, y + h);
-        p.cubicTo(x + w/2f, y + h*0.75f, x+w, y + h*0.6f, x+w, y + h*0.25f);
-        p.cubicTo(x+w, y, x + w/2f, y, x + w/2f, y + h*0.25f);
+        p.moveTo(x + w/2f, y + h*0.25f);
+        p.cubicTo(x+w/2f, y, x, y, x, y+h*0.25f);
+        p.cubicTo(x, y+h*0.6f, x+w/2f, y+h*0.75f, x+w/2f, y+h);
+        p.cubicTo(x+w/2f, y+h*0.75f, x+w, y+h*0.6f, x+w, y+h*0.25f);
+        p.cubicTo(x+w, y, x+w/2f, y, x+w/2f, y+h*0.25f);
         p.close();
         return p;
     }
@@ -278,9 +291,9 @@ public class PeerRadarView extends View {
         Path p = new Path();
         for (int i = 0; i < pts * 2; i++) {
             double angle = start + i * step;
-            float r = (i % 2 == 0) ? outerR : innerR;
-            float x = cx + (float)(r * Math.cos(angle));
-            float y = cy + (float)(r * Math.sin(angle));
+            float  r     = (i % 2 == 0) ? outerR : innerR;
+            float  x     = cx + (float)(r * Math.cos(angle));
+            float  y     = cy + (float)(r * Math.sin(angle));
             if (i == 0) p.moveTo(x, y); else p.lineTo(x, y);
         }
         p.close();
@@ -293,12 +306,12 @@ public class PeerRadarView extends View {
     public boolean onTouchEvent(MotionEvent event) {
         if (event.getAction() != MotionEvent.ACTION_DOWN) return true;
         float tx = event.getX(), ty = event.getY();
-        float hitR = iconR * 2f; // generous hit area
+        float hitR = iconR * 2f;
 
         PeerNode tapped = null;
         for (PeerNode peer : peers) {
-            float px = cx + peer.nx * outerR * 0.75f;
-            float py = cy + peer.ny * outerR * 0.75f;
+            float px = cx + peer.nx * maxR * 0.75f;
+            float py = cy + peer.ny * maxR * 0.75f;
             float dx = tx - px, dy = ty - py;
             if (dx*dx + dy*dy <= hitR*hitR) { tapped = peer; break; }
         }
@@ -312,24 +325,26 @@ public class PeerRadarView extends View {
 
     @Override public boolean performClick() { return super.performClick(); }
 
-    // ─── Pulse animation ─────────────────────────────────────────────────────
+    // ─── Wave animation ───────────────────────────────────────────────────────
 
-    private void startPulse() {
-        pulseAnimator = ValueAnimator.ofFloat(0.95f, 1.05f);
-        pulseAnimator.setDuration(2000);
-        pulseAnimator.setRepeatMode(ValueAnimator.REVERSE);
-        pulseAnimator.setRepeatCount(ValueAnimator.INFINITE);
-        pulseAnimator.setInterpolator(new LinearInterpolator());
-        pulseAnimator.addUpdateListener(a -> {
-            pulseScale = (float) a.getAnimatedValue();
+    private void startWaveAnimation() {
+        if (waveAnimator != null && waveAnimator.isRunning()) return;
+        waveAnimator = ValueAnimator.ofFloat(0f, 1f);
+        waveAnimator.setDuration(WAVE_CYCLE_MS);
+        waveAnimator.setRepeatCount(ValueAnimator.INFINITE);
+        waveAnimator.setRepeatMode(ValueAnimator.RESTART);
+        waveAnimator.setInterpolator(new LinearInterpolator());
+        waveAnimator.addUpdateListener(anim -> {
+            wavePhase = (float) anim.getAnimatedValue();
             invalidate();
         });
-        pulseAnimator.start();
+        waveAnimator.start();
     }
 
-    @Override
-    protected void onDetachedFromWindow() {
-        super.onDetachedFromWindow();
-        if (pulseAnimator != null) pulseAnimator.cancel();
+    private void stopWaveAnimation() {
+        if (waveAnimator != null) {
+            waveAnimator.cancel();
+            waveAnimator = null;
+        }
     }
 }

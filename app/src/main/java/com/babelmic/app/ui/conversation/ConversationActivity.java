@@ -23,24 +23,37 @@ import com.babelmic.app.util.ProfileManager;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Screen 7 — Live conversation.
  *
- * Layout:
- *   • Disconnect pill (top-left) + BabelMic logo (top-centre)
- *   • Avatar visualizer (upper centre) — reacts to mic RMS or TTS
- *   • Yellow subtitle card (middle) — faded previous line + bold current
- *   • Circular mic FAB (bottom centre) — hold to speak
+ * <h3>Translation readiness</h3>
+ * In normal mode, the mic is disabled until after the connection handshake
+ * delivers the peer's language tag AND the ML Kit model for that pair has
+ * finished downloading. Status is shown in the subtitle card.
+ *
+ * <h3>Disconnect protocol</h3>
+ * When either side taps Disconnect or presses Back:
+ * <ol>
+ *   <li>Send {@code CTRL:DISCONNECT} to the peer.</li>
+ *   <li>Close the socket.</li>
+ *   <li>Finish the activity.</li>
+ * </ol>
+ * When the peer sends {@code CTRL:DISCONNECT} to us, we show a friendly
+ * "Partner ended the session" dialog rather than the generic "connection lost" error.
  */
 public class ConversationActivity extends AppCompatActivity {
 
     private static final String TAG = "ConversationActivity";
 
+    // ─── Wire protocol ────────────────────────────────────────────────────────
     private static final String PREFIX_FROM         = "FROM:";
     private static final String CTRL_SPEAKING_START = "CTRL:SPEAKING_START";
     private static final String CTRL_SPEAKING_STOP  = "CTRL:SPEAKING_STOP";
+    private static final String CTRL_DISCONNECT     = "CTRL:DISCONNECT";
 
+    // ─── View binding ─────────────────────────────────────────────────────────
     private ActivityConversationBinding binding;
 
     // ─── Pipeline ─────────────────────────────────────────────────────────────
@@ -49,7 +62,7 @@ public class ConversationActivity extends AppCompatActivity {
     private AndroidTextToSpeech      textToSpeech;
     private WifiDirectPeerConnection peerConnection;
 
-    // ─── Session ──────────────────────────────────────────────────────────────
+    // ─── Session state ────────────────────────────────────────────────────────
     private Language myLanguage;
     private boolean  isGroupOwner;
     private String   peerIpAddress;
@@ -58,6 +71,15 @@ public class ConversationActivity extends AppCompatActivity {
 
     private ProfileManager.PeerProfile peerProfile = null;
     private volatile boolean peerIsSpeaking = false;
+
+    /**
+     * True once the ML Kit translation model for the peer's language is ready.
+     * Mic is disabled until this is true in normal mode.
+     */
+    private final AtomicBoolean translationModelReady = new AtomicBoolean(false);
+
+    /** True if WE initiated the disconnect (suppresses the "connection lost" error dialog). */
+    private volatile boolean intentionalDisconnect = false;
 
     // ─── Subtitle state ───────────────────────────────────────────────────────
     private String previousSubtitle = "";
@@ -87,7 +109,11 @@ public class ConversationActivity extends AppCompatActivity {
         if (speechRecognizer != null) speechRecognizer.destroy();
         if (translator       != null) translator.close();
         if (textToSpeech     != null) textToSpeech.shutdown();
-        if (peerConnection   != null) peerConnection.disconnect();
+        // peerConnection.disconnect() is called explicitly in performDisconnect()
+        // onDestroy can reach here after that, so guard with isConnected check
+        if (peerConnection != null && peerConnection.isConnected()) {
+            peerConnection.disconnect();
+        }
         executor.shutdown();
     }
 
@@ -96,10 +122,7 @@ public class ConversationActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle("End Session?")
                 .setMessage("This will disconnect you from your partner.")
-                .setPositiveButton("End", (d, w) -> {
-                    if (peerConnection != null) peerConnection.disconnect();
-                    finish();
-                })
+                .setPositiveButton("End", (d, w) -> performDisconnect())
                 .setNegativeButton("Stay", null).show();
     }
 
@@ -123,12 +146,6 @@ public class ConversationActivity extends AppCompatActivity {
                 ProfileManager.getColorBottom(this));
         binding.avatarVisualizer.setState(AvatarVisualizerView.VisualizerState.IDLE);
         binding.tvSpeakerName.setText("");
-
-        if (isLoopbackMode) {
-            Language target = LanguageManager.findByTag(loopbackTargetLang);
-            String tName = (target != null) ? target.getDisplayName() : loopbackTargetLang;
-            showSubtitle("", "🧪 Test mode → " + tName);
-        }
     }
 
     // ─── Pipeline ─────────────────────────────────────────────────────────────
@@ -163,7 +180,15 @@ public class ConversationActivity extends AppCompatActivity {
 
         // Translator
         translator = new MLKitTranslator();
-        if (isLoopbackMode) prepareTranslationModel();
+
+        if (isLoopbackMode) {
+            // Loopback: we know both languages immediately — download now
+            prepareLoopbackModel();
+        } else {
+            // Normal mode: mic blocked until handshake + model download both complete
+            binding.btnMic.setEnabled(false);
+            showSubtitle("", "Connecting to partner…");
+        }
 
         // TTS
         textToSpeech = new AndroidTextToSpeech(this);
@@ -186,13 +211,22 @@ public class ConversationActivity extends AppCompatActivity {
         // Socket
         peerConnection = new WifiDirectPeerConnection();
         peerConnection.setMyProfileJson(ProfileManager.toHandshakeJson(this));
+
         peerConnection.setHandshakeCallback(json -> {
             peerProfile = ProfileManager.fromHandshakeJson(json);
-            runOnUiThread(() -> prepareModelForPeer(peerProfile.languageTag));
+            Log.d(TAG, "Handshake complete — peer lang: " + peerProfile.languageTag);
+            runOnUiThread(() -> {
+                showSubtitle("", "Downloading translation model…");
+                binding.btnMic.setEnabled(false);
+            });
+            // Now download model for peer's language → my language
+            downloadModelThenEnableMic(peerProfile.languageTag, myLanguage.getBcp47Tag());
         });
+
         peerConnection.setDataCallback(new WifiDirectPeerConnection.DataReceivedCallback() {
             @Override public void onDataReceived(String data) { handleIncoming(data); }
             @Override public void onConnectionLost(String reason) {
+                if (intentionalDisconnect) return; // we disconnected — no dialog needed
                 runOnUiThread(() -> showConnectionLostDialog(reason));
             }
         });
@@ -210,6 +244,71 @@ public class ConversationActivity extends AppCompatActivity {
                 }
             });
         }
+    }
+
+    // ─── Model download ───────────────────────────────────────────────────────
+
+    /**
+     * Downloads the translation model for the given language pair.
+     * When complete, enables the mic and clears the status message.
+     * Called after the handshake in normal mode.
+     */
+    private void downloadModelThenEnableMic(String fromLang, String toLang) {
+        translator.prepareModel(fromLang, toLang, new MLKitTranslator.ModelReadyCallback() {
+            @Override public void onModelReady() {
+                translationModelReady.set(true);
+                runOnUiThread(() -> {
+                    showSubtitle("", "");
+                    binding.btnMic.setEnabled(true);
+                    Log.d(TAG, "Model ready: " + fromLang + "→" + toLang);
+                });
+            }
+            @Override public void onModelDownloadFailed(Exception e) {
+                // Still allow speaking — translate() will retry inline
+                // but warn the user
+                translationModelReady.set(true);
+                runOnUiThread(() -> {
+                    showSubtitle("", "⚠ Translation model unavailable — check internet");
+                    binding.btnMic.setEnabled(true);
+                    Log.w(TAG, "Model download failed, will retry on first message", e);
+                });
+            }
+        });
+    }
+
+    private void prepareLoopbackModel() {
+        Language target = LanguageManager.findByTag(loopbackTargetLang);
+        String tName = (target != null) ? target.getDisplayName() : loopbackTargetLang;
+
+        binding.btnMic.setEnabled(false);
+        showSubtitle("", "Downloading model for " + tName + "…");
+
+        AlertDialog dlg = new AlertDialog.Builder(this)
+                .setTitle("Downloading Language Model")
+                .setMessage("One-time download for " + myLanguage.getDisplayName()
+                        + " → " + tName + " (~50 MB).")
+                .setCancelable(false).create();
+        dlg.show();
+
+        translator.prepareModel(myLanguage.getBcp47Tag(), loopbackTargetLang,
+                new MLKitTranslator.ModelReadyCallback() {
+                    @Override public void onModelReady() {
+                        translationModelReady.set(true);
+                        runOnUiThread(() -> {
+                            dlg.dismiss();
+                            binding.btnMic.setEnabled(true);
+                            showSubtitle("", "");
+                        });
+                    }
+                    @Override public void onModelDownloadFailed(Exception e) {
+                        translationModelReady.set(true);
+                        runOnUiThread(() -> {
+                            dlg.dismiss();
+                            binding.btnMic.setEnabled(true);
+                            showSubtitle("", "⚠ Model download failed");
+                        });
+                    }
+                });
     }
 
     // ─── Mic button ───────────────────────────────────────────────────────────
@@ -251,13 +350,33 @@ public class ConversationActivity extends AppCompatActivity {
     }
 
     private void setMicActive(boolean active) {
-        // Visual feedback on the mic FAB — scale slightly when active
         binding.btnMic.animate()
                 .scaleX(active ? 1.15f : 1f)
                 .scaleY(active ? 1.15f : 1f)
-                .setDuration(120)
-                .start();
-        binding.btnMic.setEnabled(!peerIsSpeaking);
+                .setDuration(120).start();
+        // Only re-enable if model is ready and peer is not speaking
+        if (!active) {
+            binding.btnMic.setEnabled(translationModelReady.get() && !peerIsSpeaking);
+        }
+    }
+
+    // ─── Disconnect ───────────────────────────────────────────────────────────
+
+    /**
+     * Clean intentional disconnect: notifies the peer, closes socket, finishes.
+     */
+    private void performDisconnect() {
+        intentionalDisconnect = true;
+        // Notify peer before closing so they see a friendly message
+        if (peerConnection != null && peerConnection.isConnected()) {
+            try {
+                peerConnection.sendData(CTRL_DISCONNECT);
+                // Small delay to let the message flush before closing socket
+                Thread.sleep(150);
+            } catch (Exception ignored) {}
+            peerConnection.disconnect();
+        }
+        finish();
     }
 
     // ─── Outgoing ─────────────────────────────────────────────────────────────
@@ -268,10 +387,8 @@ public class ConversationActivity extends AppCompatActivity {
                 if (isLoopbackMode) {
                     String translated = translator.translate(
                             original, myLanguage.getBcp47Tag(), loopbackTargetLang);
-
                     runOnUiThread(() -> {
                         showSubtitle(original, translated);
-                        // Switch to a simulated peer avatar while TTS plays
                         binding.avatarVisualizer.setState(
                                 AvatarVisualizerView.VisualizerState.SPEAKING_PEER);
                         binding.tvSpeakerName.setText("Translation");
@@ -281,7 +398,7 @@ public class ConversationActivity extends AppCompatActivity {
                     String payload = PREFIX_FROM + myLanguage.getBcp47Tag() + "|" + original;
                     if (peerConnection.isConnected()) peerConnection.sendData(payload);
                     runOnUiThread(() -> {
-                        showSubtitle(original, "(sent to partner)");
+                        showSubtitle(original, "→ sent");
                         binding.avatarVisualizer.setState(
                                 AvatarVisualizerView.VisualizerState.IDLE);
                         restoreMyAvatar();
@@ -314,12 +431,21 @@ public class ConversationActivity extends AppCompatActivity {
                     break;
                 case CTRL_SPEAKING_STOP:
                     peerIsSpeaking = false;
-                    runOnUiThread(() -> binding.btnMic.setEnabled(true));
+                    runOnUiThread(() -> {
+                        if (translationModelReady.get()) {
+                            binding.btnMic.setEnabled(true);
+                        }
+                    });
+                    break;
+                case CTRL_DISCONNECT:
+                    // Peer deliberately ended the session
+                    runOnUiThread(() -> showPeerDisconnectedDialog());
                     break;
             }
             return;
         }
 
+        // Translation payload
         executor.execute(() -> {
             try {
                 String peerLang, original;
@@ -330,6 +456,13 @@ public class ConversationActivity extends AppCompatActivity {
                 } else {
                     peerLang = "en";
                     original = raw;
+                }
+
+                // If model isn't ready yet, wait up to 15s before giving up
+                int waited = 0;
+                while (!translationModelReady.get() && waited < 15000) {
+                    Thread.sleep(300);
+                    waited += 300;
                 }
 
                 String translated = translator.translate(
@@ -353,7 +486,7 @@ public class ConversationActivity extends AppCompatActivity {
         });
     }
 
-    // ─── Subtitle helpers ─────────────────────────────────────────────────────
+    // ─── Subtitle ─────────────────────────────────────────────────────────────
 
     private void showSubtitle(String previous, String current) {
         previousSubtitle = previous;
@@ -361,7 +494,7 @@ public class ConversationActivity extends AppCompatActivity {
         binding.tvCurrentText.setText(current);
     }
 
-    // ─── Avatar helpers ───────────────────────────────────────────────────────
+    // ─── Avatar ───────────────────────────────────────────────────────────────
 
     private void restoreMyAvatar() {
         binding.avatarVisualizer.setAvatar(
@@ -379,66 +512,30 @@ public class ConversationActivity extends AppCompatActivity {
         }
     }
 
-    // ─── Model prep ───────────────────────────────────────────────────────────
-
-    private void prepareTranslationModel() {
-        Language target = LanguageManager.findByTag(loopbackTargetLang);
-        String tName = (target != null) ? target.getDisplayName() : loopbackTargetLang;
-
-        binding.btnMic.setEnabled(false);
-        showSubtitle("", "Downloading model for " + tName + "…");
-
-        android.app.AlertDialog dlg = new android.app.AlertDialog.Builder(this)
-                .setTitle("Downloading Language Model")
-                .setMessage("One-time download for " + myLanguage.getDisplayName()
-                        + " → " + tName + " (~50 MB).")
-                .setCancelable(false).create();
-        dlg.show();
-
-        translator.prepareModel(myLanguage.getBcp47Tag(), loopbackTargetLang,
-                new MLKitTranslator.ModelReadyCallback() {
-                    @Override public void onModelReady() {
-                        runOnUiThread(() -> {
-                            dlg.dismiss();
-                            binding.btnMic.setEnabled(true);
-                            showSubtitle("", "");
-                        });
-                    }
-                    @Override public void onModelDownloadFailed(Exception e) {
-                        runOnUiThread(() -> {
-                            dlg.dismiss();
-                            binding.btnMic.setEnabled(true);
-                            showSubtitle("", "Model download failed — will retry on first speech");
-                        });
-                    }
-                });
-    }
-
-    private void prepareModelForPeer(String peerLang) {
-        translator.prepareModel(peerLang, myLanguage.getBcp47Tag(),
-                new MLKitTranslator.ModelReadyCallback() {
-                    @Override public void onModelReady() { Log.d(TAG, "Peer model ready"); }
-                    @Override public void onModelDownloadFailed(Exception e) {
-                        Log.w(TAG, "Peer model download failed", e);
-                    }
-                });
-    }
-
-    // ─── Error dialogs ────────────────────────────────────────────────────────
+    // ─── Dialogs ──────────────────────────────────────────────────────────────
 
     private void showConnectionLostDialog(String reason) {
-        new android.app.AlertDialog.Builder(this)
+        new AlertDialog.Builder(this)
                 .setTitle("Connection Lost")
-                .setMessage("The connection was lost.\n\n" + reason)
+                .setMessage("The connection was interrupted.\n\n" + reason
+                        + "\n\nGo back and reconnect.")
                 .setPositiveButton("Go Back", (d, w) -> finish())
                 .setCancelable(false).show();
     }
 
+    private void showPeerDisconnectedDialog() {
+        String peerName = (peerProfile != null) ? peerProfile.name : "Your partner";
+        new AlertDialog.Builder(this)
+                .setTitle("Session Ended")
+                .setMessage(peerName + " has ended the session.")
+                .setPositiveButton("OK", (d, w) -> finish())
+                .setCancelable(false).show();
+    }
+
     private void showMicPermissionDialog() {
-        new android.app.AlertDialog.Builder(this)
+        new AlertDialog.Builder(this)
                 .setTitle("Microphone Access Needed")
-                .setMessage("Go to Settings → Apps → BabelMic → Permissions "
-                        + "and enable Microphone.")
+                .setMessage("Go to Settings → Apps → BabelMic → Permissions and enable Microphone.")
                 .setPositiveButton("Open Settings", (d, w) -> {
                     android.content.Intent i = new android.content.Intent(
                             android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
@@ -449,18 +546,18 @@ public class ConversationActivity extends AppCompatActivity {
     }
 
     private void checkTtsLanguagePack(String langTag) {
-        final android.speech.tts.TextToSpeech[] probeHolder = new android.speech.tts.TextToSpeech[1];
-        probeHolder[0] = new android.speech.tts.TextToSpeech(this, status -> {
+        final android.speech.tts.TextToSpeech[] probe = new android.speech.tts.TextToSpeech[1];
+        probe[0] = new android.speech.tts.TextToSpeech(this, status -> {
             if (status != android.speech.tts.TextToSpeech.SUCCESS) return;
             java.util.Locale locale = java.util.Locale.forLanguageTag(langTag);
             mainHandler.postDelayed(() -> {
                 try {
-                    if (probeHolder[0].isLanguageAvailable(locale)
+                    if (probe[0].isLanguageAvailable(locale)
                             == android.speech.tts.TextToSpeech.LANG_MISSING_DATA) {
                         showTtsPackDialog(langTag);
                     }
                 } catch (Exception ignored) {}
-                probeHolder[0].shutdown();
+                probe[0].shutdown();
             }, 500);
         });
     }
@@ -468,9 +565,9 @@ public class ConversationActivity extends AppCompatActivity {
     private void showTtsPackDialog(String langTag) {
         Language lang = LanguageManager.findByTag(langTag);
         String name = (lang != null) ? lang.getDisplayName() : langTag;
-        new android.app.AlertDialog.Builder(this)
+        new AlertDialog.Builder(this)
                 .setTitle("Voice Pack Missing")
-                .setMessage("Install the " + name + " voice pack for better TTS quality.\n\n"
+                .setMessage("Install the " + name + " voice pack for better audio quality.\n\n"
                         + "Settings → Accessibility → Text-to-Speech")
                 .setPositiveButton("Open Settings", (d, w) -> {
                     android.content.Intent i = new android.content.Intent();

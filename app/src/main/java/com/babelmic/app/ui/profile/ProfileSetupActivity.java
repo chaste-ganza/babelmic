@@ -7,30 +7,25 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.babelmic.app.databinding.ActivityProfileSetupBinding;
-import com.babelmic.app.model.AvatarShape;
 import com.babelmic.app.ui.language.LanguageSelectionActivity;
-import com.babelmic.app.ui.widget.AvatarVisualizerView;
 import com.babelmic.app.util.ProfileManager;
 
 /**
  * Screen 2 — Avatar setup.
- * User picks their avatar shape and colour.
+ * User picks one of the six built-in avatar images.
  * Navigates to LanguageSelectionActivity on Confirm.
  */
 public class ProfileSetupActivity extends AppCompatActivity {
 
     private ActivityProfileSetupBinding binding;
-    private ShapePickerAdapter  shapeAdapter;
-    private ColorSwatchAdapter  colorAdapter;
-
-    private AvatarShape selectedShape = AvatarShape.STAR;
-    private int         selectedColor = 0xFFFFEB00; // default yellow like mockup
+    private AvatarPickerAdapter avatarAdapter;
+    private int selectedAvatarResId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // If launched with skip_to_language (returning user), go straight to language screen
+        // If launched with skip_to_language (returning user), skip to language screen
         if (getIntent().getBooleanExtra("skip_to_language", false)) {
             startActivity(new Intent(this, LanguageSelectionActivity.class));
             finish();
@@ -40,57 +35,34 @@ public class ProfileSetupActivity extends AppCompatActivity {
         binding = ActivityProfileSetupBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        // Load any previously saved values
-        selectedShape = ProfileManager.getAvatarShape(this);
-        selectedColor = ProfileManager.getColorTop(this);
+        // Load previously saved avatar (default to first)
+        int saved = ProfileManager.getAvatarResId(this);
+        selectedAvatarResId = (saved != 0) ? saved : AvatarPickerAdapter.AVATARS[0];
 
-        setupPreview();
-        setupShapePicker();
-        setupColorPicker();
+        setupAvatarPicker();
         setupButtons();
     }
 
-    private void setupPreview() {
-        binding.avatarPreview.setAvatar(selectedShape, selectedColor, selectedColor);
-        binding.avatarPreview.setState(AvatarVisualizerView.VisualizerState.IDLE);
-    }
-
-    private void refreshPreview() {
-        binding.avatarPreview.setAvatar(selectedShape, selectedColor, selectedColor);
-    }
-
-    private void setupShapePicker() {
-        shapeAdapter = new ShapePickerAdapter(shape -> {
-            selectedShape = shape;
-            refreshPreview();
+    private void setupAvatarPicker() {
+        avatarAdapter = new AvatarPickerAdapter((resId, position) -> {
+            selectedAvatarResId = resId;
+            // Show the selected avatar in the large preview slot
+            binding.avatarPreview.setImageResource(resId);
         });
-        shapeAdapter.setSelectedShape(selectedShape);
-        shapeAdapter.setPreviewColor(selectedColor);
+        avatarAdapter.setSelectedByResId(selectedAvatarResId);
 
         binding.rvShapes.setLayoutManager(
                 new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        binding.rvShapes.setAdapter(shapeAdapter);
-    }
+        binding.rvShapes.setAdapter(avatarAdapter);
 
-    private void setupColorPicker() {
-        colorAdapter = new ColorSwatchAdapter(color -> {
-            selectedColor = color;
-            shapeAdapter.setPreviewColor(color);
-            refreshPreview();
-        });
-        colorAdapter.setSelectedColor(selectedColor);
-
-        binding.rvColors.setLayoutManager(
-                new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        binding.rvColors.setAdapter(colorAdapter);
+        // Set initial preview
+        binding.avatarPreview.setImageResource(selectedAvatarResId);
     }
 
     private void setupButtons() {
         binding.btnBack.setOnClickListener(v -> onBackPressed());
-
         binding.btnConfirm.setOnClickListener(v -> {
-            ProfileManager.setAvatarShape(this, selectedShape);
-            ProfileManager.setColors(this, selectedColor, selectedColor);
+            ProfileManager.setAvatarResId(this, selectedAvatarResId);
             startActivity(new Intent(this, LanguageSelectionActivity.class));
             finish();
         });
