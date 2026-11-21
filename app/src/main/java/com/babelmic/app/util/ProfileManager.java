@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 
 import com.babelmic.app.model.AvatarShape;
+import com.babelmic.app.model.PeerProfile;
 
 /**
  * Persists and retrieves the user's profile using {@link SharedPreferences}.
@@ -227,22 +228,19 @@ public final class ProfileManager {
     }
 
     /**
-     * Builds a compact JSON string of this profile suitable for sending over
-     * the Wi-Fi Direct socket during the connection handshake.
-     *
-     * <p>Format: {@code {"n":"Alice","l":"en","s":"HEART","ct":-16711681,"cb":-12236160}}</p>
+     * Builds the profile sent over the Wi-Fi Direct socket during the handshake.
+     * Encoding is delegated to {@link HandshakeCodec} so unusual names are safe.
      */
     public static String toHandshakeJson(Context ctx) {
-        return "{"
-                + "\"n\":\""  + escape(getDisplayName(ctx))   + "\","
-                + "\"l\":\""  + getLanguageTag(ctx)           + "\","
-                + "\"ln\":\"" + escape(getLanguageName(ctx))  + "\","
-                + "\"s\":\""  + getAvatarShape(ctx).name()    + "\","
-                + "\"an\":\"" + escape(getAvatarName(ctx))    + "\","
-                + "\"ic\":"   + getIdentityColor(ctx)         + ","
-                + "\"ct\":"   + getColorTop(ctx)              + ","
-                + "\"cb\":"   + getColorBottom(ctx)
-                + "}";
+        return HandshakeCodec.encode(
+                getDisplayName(ctx),
+                getLanguageTag(ctx),
+                getLanguageName(ctx),
+                getAvatarShape(ctx).name(),
+                getAvatarName(ctx),
+                getIdentityColor(ctx),
+                getColorTop(ctx),
+                getColorBottom(ctx));
     }
 
     /**
@@ -250,43 +248,26 @@ public final class ProfileManager {
      * Returns a default profile on any parse error.
      */
     public static PeerProfile fromHandshakeJson(String json) {
-        try {
-            String name       = extractString(json, "n",  "Partner");
-            String langTag    = extractString(json, "l",  "en");
-            String langName   = extractString(json, "ln", "English");
-            String shapeName  = extractString(json, "s",  "CIRCLE");
-            String avatarName = extractString(json, "an", "");
-            int    ic         = extractInt(json,    "ic", 0xFFFF2D78);
-            int    ct         = extractInt(json,    "ct", 0xFF1A73E8);
-            int    cb         = extractInt(json,    "cb", 0xFF4FC3F7);
+        HandshakeCodec.Parsed p = HandshakeCodec.decode(json);
 
-            AvatarShape shape;
-            try { shape = AvatarShape.valueOf(shapeName); }
-            catch (Exception e) { shape = AvatarShape.CIRCLE; }
-
-            // Resolve avatar res from name
-            int avatarRes = 0;
-            if (!avatarName.isEmpty()) {
-                for (int i = 0; i < com.babelmic.app.ui.profile.AvatarGridAdapter.AVATAR_NAMES.length; i++) {
-                    if (com.babelmic.app.ui.profile.AvatarGridAdapter.AVATAR_NAMES[i].equals(avatarName)) {
-                        avatarRes = com.babelmic.app.ui.profile.AvatarGridAdapter.AVATAR_RES[i];
-                        break;
-                    }
+        // Resolve the avatar image from its name, with a stable fallback by name hash.
+        int avatarRes = 0;
+        if (!p.avatarName.isEmpty()) {
+            for (int i = 0; i < com.babelmic.app.ui.profile.AvatarGridAdapter.AVATAR_NAMES.length; i++) {
+                if (com.babelmic.app.ui.profile.AvatarGridAdapter.AVATAR_NAMES[i].equals(p.avatarName)) {
+                    avatarRes = com.babelmic.app.ui.profile.AvatarGridAdapter.AVATAR_RES[i];
+                    break;
                 }
             }
-            if (avatarRes == 0) {
-                // Fall back: stable hash of name
-                int idx = Math.abs(name.hashCode()) %
-                        com.babelmic.app.ui.profile.AvatarGridAdapter.AVATAR_RES.length;
-                avatarRes = com.babelmic.app.ui.profile.AvatarGridAdapter.AVATAR_RES[idx];
-            }
-
-            return new PeerProfile(name, langTag, langName, shape, ic, ct, cb, avatarRes);
-        } catch (Exception e) {
-            return new PeerProfile("Partner", "en", "English",
-                    AvatarShape.CIRCLE, 0xFFFF2D78, 0xFF1A73E8, 0xFF4FC3F7,
-                    com.babelmic.app.R.drawable.avatar_rabbit);
         }
+        if (avatarRes == 0) {
+            int idx = Math.abs(p.name.hashCode() & 0x7fffffff) %
+                    com.babelmic.app.ui.profile.AvatarGridAdapter.AVATAR_RES.length;
+            avatarRes = com.babelmic.app.ui.profile.AvatarGridAdapter.AVATAR_RES[idx];
+        }
+
+        return new PeerProfile(p.name, p.languageTag, p.languageName, p.avatarShape,
+                p.identityColor, p.colorTop, p.colorBottom, avatarRes);
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -296,60 +277,4 @@ public final class ProfileManager {
                 .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
     }
 
-    private static String escape(String s) {
-        return s.replace("\"", "\\\"").replace("\\", "\\\\");
-    }
-
-    private static String extractString(String json, String key, String fallback) {
-        String search = "\"" + key + "\":\"";
-        int start = json.indexOf(search);
-        if (start < 0) return fallback;
-        start += search.length();
-        int end = json.indexOf("\"", start);
-        if (end < 0) return fallback;
-        return json.substring(start, end);
-    }
-
-    private static int extractInt(String json, String key, int fallback) {
-        String search = "\"" + key + "\":";
-        int start = json.indexOf(search);
-        if (start < 0) return fallback;
-        start += search.length();
-        int end = start;
-        while (end < json.length() && (Character.isDigit(json.charAt(end))
-                || json.charAt(end) == '-')) {
-            end++;
-        }
-        try { return Integer.parseInt(json.substring(start, end)); }
-        catch (Exception e) { return fallback; }
-    }
-
-    // ─── PeerProfile ─────────────────────────────────────────────────────────
-
-    /**
-     * Immutable snapshot of a connected peer's profile received during handshake.
-     */
-    public static class PeerProfile {
-        public final String      name;
-        public final String      languageTag;
-        public final String      languageName;
-        public final AvatarShape avatarShape;
-        public final int         identityColor; // ring / wave colour
-        public final int         colorTop;
-        public final int         colorBottom;
-        public final int         avatarResId;   // resolved drawable resource
-
-        public PeerProfile(String name, String languageTag, String languageName,
-                           AvatarShape avatarShape, int identityColor,
-                           int colorTop, int colorBottom, int avatarResId) {
-            this.name          = name;
-            this.languageTag   = languageTag;
-            this.languageName  = languageName;
-            this.avatarShape   = avatarShape;
-            this.identityColor = identityColor;
-            this.colorTop      = colorTop;
-            this.colorBottom   = colorBottom;
-            this.avatarResId   = avatarResId;
-        }
-    }
 }

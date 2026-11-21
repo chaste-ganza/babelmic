@@ -17,6 +17,7 @@ import com.babelmic.app.impl.AndroidSpeechRecognizer;
 import com.babelmic.app.impl.AndroidTextToSpeech;
 import com.babelmic.app.impl.MLKitTranslator;
 import com.babelmic.app.model.Language;
+import com.babelmic.app.model.PeerProfile;
 import com.babelmic.app.model.SessionConfig;
 import com.babelmic.app.network.WifiDirectPeerConnection;
 import com.babelmic.app.ui.disconnected.DisconnectedActivity;
@@ -60,7 +61,7 @@ public class ConversationActivity extends AppCompatActivity {
     private boolean  isLoopbackMode     = false;
     private String   loopbackTargetLang = "fr";
 
-    private ProfileManager.PeerProfile peerProfile = null;
+    private PeerProfile peerProfile = null;
     private volatile boolean peerIsSpeaking   = false;
     private volatile boolean intentionalDisconnect = false;
     private final AtomicBoolean translationModelReady = new AtomicBoolean(false);
