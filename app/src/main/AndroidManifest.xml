@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- ─── Permissions ──────────────────────────────────────────────────── -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
@@ -24,55 +25,69 @@
         android:theme="@style/Theme.BabelMic"
         android:hardwareAccelerated="true">
 
-        <!-- ─── LAUNCHER: Username entry (first run) ─── -->
+        <!-- ─── LAUNCHER: Splash ─────────────────────────────────────────── -->
         <activity
-            android:name=".ui.onboarding.UsernameActivity"
+            android:name=".ui.splash.SplashActivity"
             android:exported="true"
             android:screenOrientation="portrait"
-            android:windowSoftInputMode="stateHidden|adjustResize">
+            android:theme="@style/Theme.BabelMic.Splash"
+            android:windowSoftInputMode="stateHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <!-- ─── Avatar setup ─── -->
+        <!-- ─── Onboarding ───────────────────────────────────────────────── -->
+        <activity
+            android:name=".ui.splash.OnboardingActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- ─── Username entry ───────────────────────────────────────────── -->
+        <activity
+            android:name=".ui.onboarding.UsernameActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- ─── Avatar / profile setup ───────────────────────────────────── -->
         <activity
             android:name=".ui.profile.ProfileSetupActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
 
-        <!-- ─── Language selection ─── -->
+        <!-- ─── Language selection ───────────────────────────────────────── -->
         <activity
             android:name=".ui.language.LanguageSelectionActivity"
             android:exported="false"
             android:screenOrientation="portrait"
-            android:windowSoftInputMode="stateHidden|adjustResize" />
+            android:windowSoftInputMode="adjustResize" />
 
-        <!-- ─── Device discovery ─── -->
+        <!-- ─── Device discovery ─────────────────────────────────────────── -->
         <activity
             android:name=".ui.discovery.DeviceDiscoveryActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
 
-        <!-- ─── Pending connection request ─── -->
+        <!-- ─── Connected successfully (transient, 1.5s) ─────────────────── -->
         <activity
-            android:name=".ui.discovery.PendingRequestActivity"
+            android:name=".ui.connected.ConnectedSuccessfullyActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
 
-        <!-- ─── Incoming connection request ─── -->
-        <activity
-            android:name=".ui.discovery.IncomingRequestActivity"
-            android:exported="false"
-            android:screenOrientation="portrait" />
-
-        <!-- ─── Conversation ─── -->
+        <!-- ─── Conversation ─────────────────────────────────────────────── -->
         <activity
             android:name=".ui.conversation.ConversationActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
+
+        <!-- ─── Disconnected ─────────────────────────────────────────────── -->
+        <activity
+            android:name=".ui.disconnected.DisconnectedActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
 
     </application>
 

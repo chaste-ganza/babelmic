@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="@color/background">
+
+    <!-- Top spacer -->
+    <View android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- Logo -->
+    <ImageView
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:src="@drawable/ic_logo"
+        android:scaleType="fitCenter"
+        android:contentDescription="BabelMic"
+        android:layout_marginBottom="40dp" />
+
+    <!-- "Connected successfully" text -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Connected successfully"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="32dp" />
+
+    <!-- Green checkmark circle -->
+    <ImageView
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:src="@drawable/ic_check_success"
+        android:scaleType="fitCenter"
+        android:contentDescription="Connected" />
+
+    <!-- Bottom spacer -->
+    <View android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1" />
+
+</LinearLayout>

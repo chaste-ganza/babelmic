@@ -9,12 +9,11 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.babelmic.app.databinding.ActivityDeviceDiscoveryBinding;
-import com.babelmic.app.model.AvatarShape;
-import com.babelmic.app.model.Language;
 import com.babelmic.app.network.WifiDirectManager;
 import com.babelmic.app.ui.widget.PeerRadarView;
 import com.babelmic.app.util.LanguageManager;
 import com.babelmic.app.util.ProfileManager;
+import com.babelmic.app.model.Language;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -24,11 +23,10 @@ import java.util.Map;
 import java.util.Random;
 
 /**
- * Screen 4 — Find your peer.
- *
- * Uses Wi-Fi Direct DNS-SD service discovery to find other BabelMic users.
- * Each discovered peer is shown as an avatar icon on the radar field.
- * User taps a peer to select, then taps Confirm to initiate connection.
+ * Screen 6 — Find your peer.
+ * Pink wave rings, avatar badges with identity rings, chevron animation on tap.
+ * "Connect peer" enabled only after selecting a peer.
+ * Pending/Incoming shown as bottom sheets over this screen.
  */
 public class DeviceDiscoveryActivity extends AppCompatActivity
         implements WifiDirectManager.WifiDirectCallback {
@@ -57,42 +55,38 @@ public class DeviceDiscoveryActivity extends AppCompatActivity
         wifiDirectManager = new WifiDirectManager(this, this);
     }
 
-    // ─── Setup ────────────────────────────────────────────────────────────────
-
     private void setupMyAvatar() {
+        int resId = ProfileManager.getAvatarResId(this);
+        int color = ProfileManager.getIdentityColor(this);
         Language myLang = LanguageManager.findByTag(ProfileManager.getLanguageTag(this));
         String flag = (myLang != null) ? myLang.getFlagEmoji() : "🌐";
-        binding.peerRadar.setMyAvatar(
-                ProfileManager.getAvatarShape(this),
-                ProfileManager.getColorTop(this),
-                flag);
+
+        binding.badgeMyAvatar.set(resId != 0 ? resId : com.babelmic.app.R.drawable.avatar_bird, color);
+        binding.peerRadar.setMyAvatar(resId != 0 ? resId : com.babelmic.app.R.drawable.avatar_bird, color, flag);
     }
 
     private void setupRadar() {
         binding.peerRadar.setOnPeerTappedListener(peer -> {
             selectedNode = peer;
-            binding.btnConfirm.setEnabled(peer != null);
+            binding.btnConnectPeer.setEnabled(peer != null);
         });
     }
 
     private void setupButtons() {
-        binding.btnBack.setOnClickListener(v -> onBackPressed());
-        binding.btnConfirm.setEnabled(false);
-        binding.btnConfirm.setOnClickListener(v -> {
+        binding.btnBack.setOnClickListener(v -> finish());
+        binding.btnConnectPeer.setEnabled(false);
+        binding.btnConnectPeer.setOnClickListener(v -> {
             if (selectedNode == null) return;
             WifiP2pDevice device = deviceMap.get(selectedNode.id);
             if (device != null) {
                 wifiDirectManager.connectTo(device);
-                binding.btnConfirm.setEnabled(false);
-                binding.btnConfirm.setText("Connecting…");
+                binding.btnConnectPeer.setEnabled(false);
+                binding.btnConnectPeer.setText("Connecting…");
             }
         });
     }
 
-    // ─── Lifecycle ────────────────────────────────────────────────────────────
-
-    @Override
-    protected void onResume() {
+    @Override protected void onResume() {
         super.onResume();
         wifiDirectManager.register();
         Language myLang = LanguageManager.findByTag(ProfileManager.getLanguageTag(this));
@@ -100,8 +94,7 @@ public class DeviceDiscoveryActivity extends AppCompatActivity
         wifiDirectManager.registerService(ProfileManager.getDisplayName(this), langTag);
     }
 
-    @Override
-    protected void onPause() {
+    @Override protected void onPause() {
         super.onPause();
         wifiDirectManager.stopDiscovery();
         wifiDirectManager.unregister();
@@ -109,125 +102,102 @@ public class DeviceDiscoveryActivity extends AppCompatActivity
 
     // ─── WifiDirectCallback ───────────────────────────────────────────────────
 
-    @Override
-    public void onWifiDirectAvailabilityChanged(boolean available) {
+    @Override public void onWifiDirectAvailabilityChanged(boolean available) {
         runOnUiThread(() -> {
             if (!available) {
                 new AlertDialog.Builder(this)
                         .setTitle("Wi-Fi Direct Unavailable")
                         .setMessage("Please enable Wi-Fi to find nearby BabelMic users.")
                         .setPositiveButton("Open Settings",
-                                (d, w) -> startActivity(
-                                        new Intent(Settings.ACTION_WIFI_SETTINGS)))
+                                (d, w) -> startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS)))
                         .setNegativeButton("Cancel", null).show();
             }
         });
     }
 
-    /**
-     * Called by {@link WifiDirectManager} each time a BabelMic peer service is discovered.
-     * Adds the peer to the radar field if not already present.
-     */
-    @Override
-    public void onPeerServiceFound(WifiP2pDevice device, String peerName, String langTag) {
+    @Override public void onPeerServiceFound(WifiP2pDevice device, String peerName, String langTag) {
         runOnUiThread(() -> {
             if (peerNodeMap.containsKey(device.deviceAddress)) {
-                // Update existing node's displayed info
-                PeerRadarView.PeerNode existing = peerNodeMap.get(device.deviceAddress);
-                if (existing != null) {
-                    existing.name      = peerName;
-                    existing.flagEmoji = getFlagForLang(langTag);
+                PeerRadarView.PeerNode node = peerNodeMap.get(device.deviceAddress);
+                if (node != null) {
+                    node.name      = peerName;
+                    Language lang  = LanguageManager.findByTag(langTag);
+                    node.flagEmoji = (lang != null) ? lang.getFlagEmoji() : "🌐";
                     binding.peerRadar.setPeers(peerNodes);
                 }
                 return;
             }
 
-            // New peer — place at random position within field
             double angle = rng.nextDouble() * 2 * Math.PI;
             float  dist  = 0.35f + rng.nextFloat() * 0.45f;
-            float  nx    = (float)(dist * Math.cos(angle));
-            float  ny    = (float)(dist * Math.sin(angle));
-
             Language lang = LanguageManager.findByTag(langTag);
             String   flag = (lang != null) ? lang.getFlagEmoji() : "🌐";
 
+            // Default avatar until handshake provides real one
+            int avatarRes = com.babelmic.app.R.drawable.avatar_rabbit;
+
             PeerRadarView.PeerNode node = new PeerRadarView.PeerNode(
-                    device.deviceAddress,
-                    peerName,
-                    flag,
-                    AvatarShape.CIRCLE,
-                    0xFF5B21F5,
-                    nx, ny);
+                    device.deviceAddress, peerName, flag,
+                    0xFF4ADE80, // default green ring until real colour arrives
+                    avatarRes,
+                    (float)(dist * Math.cos(angle)),
+                    (float)(dist * Math.sin(angle)));
 
             peerNodes.add(node);
             peerNodeMap.put(device.deviceAddress, node);
             deviceMap.put(device.deviceAddress, device);
-
             binding.peerRadar.setPeers(peerNodes);
         });
     }
 
-    @Override
-    public void onConnectionEstablished(InetAddress groupOwnerAddress, boolean isGroupOwner) {
+    @Override public void onConnectionEstablished(InetAddress groupOwnerAddress, boolean isGroupOwner) {
         runOnUiThread(() -> {
             this.peerIpAddress = groupOwnerAddress.getHostAddress();
             this.isGroupOwner  = isGroupOwner;
-
-            String peerName = selectedNode != null ? selectedNode.name : "Partner";
+            String peerName    = selectedNode != null ? selectedNode.name : "Partner";
+            int    peerAvatar  = selectedNode != null ? selectedNode.avatarResId
+                                                     : com.babelmic.app.R.drawable.avatar_rabbit;
+            int    peerColor   = selectedNode != null ? selectedNode.color : 0xFF4ADE80;
 
             if (selectedNode != null) {
-                // We initiated the connection — show pending screen
-                Intent intent = new Intent(this, PendingRequestActivity.class);
-                intent.putExtra("peer_name",      peerName);
-                intent.putExtra("is_group_owner", isGroupOwner);
-                intent.putExtra("peer_ip",        this.peerIpAddress);
-                startActivity(intent);
+                // We initiated — show pending bottom sheet
+                PendingBottomSheet sheet = PendingBottomSheet.newInstance(
+                        peerName, peerAvatar, peerColor,
+                        isGroupOwner, this.peerIpAddress);
+                sheet.show(getSupportFragmentManager(), "pending");
             } else {
-                // Connection came to us — show incoming request screen
-                Intent intent = new Intent(this, IncomingRequestActivity.class);
-                intent.putExtra("peer_name",      peerName);
-                intent.putExtra("is_group_owner", isGroupOwner);
-                intent.putExtra("peer_ip",        this.peerIpAddress);
-                startActivity(intent);
+                // They initiated — show incoming bottom sheet
+                IncomingBottomSheet sheet = IncomingBottomSheet.newInstance(
+                        peerName, peerAvatar, peerColor,
+                        isGroupOwner, this.peerIpAddress);
+                sheet.show(getSupportFragmentManager(), "incoming");
             }
-
-            binding.btnConfirm.setText("Confirm");
-            binding.btnConfirm.setEnabled(false);
+            binding.btnConnectPeer.setText("Connect peer");
+            binding.btnConnectPeer.setEnabled(false);
         });
     }
 
-    @Override
-    public void onDisconnected() {
+    @Override public void onDisconnected() {
         runOnUiThread(() -> {
-            binding.btnConfirm.setText("Confirm");
-            binding.btnConfirm.setEnabled(selectedNode != null);
+            binding.btnConnectPeer.setText("Connect peer");
+            binding.btnConnectPeer.setEnabled(selectedNode != null);
         });
     }
 
-    @Override
-    public void onError(String message) {
+    @Override public void onError(String message) {
         runOnUiThread(() -> {
-            binding.btnConfirm.setText("Confirm");
-            binding.btnConfirm.setEnabled(selectedNode != null);
+            binding.btnConnectPeer.setText("Connect peer");
+            binding.btnConnectPeer.setEnabled(selectedNode != null);
             new AlertDialog.Builder(this)
                     .setTitle("Connection Failed")
-                    .setMessage(message + "\n\nMake sure both devices have Wi-Fi on "
-                            + "and are within range.")
+                    .setMessage(message + "\n\nMake sure both devices have Wi-Fi on.")
                     .setPositiveButton("Retry", (d, w) -> {
-                        Language myLang = LanguageManager.findByTag(
-                                ProfileManager.getLanguageTag(this));
-                        String langTag = (myLang != null) ? myLang.getBcp47Tag() : "en";
+                        Language myLang = LanguageManager.findByTag(ProfileManager.getLanguageTag(this));
                         wifiDirectManager.registerService(
-                                ProfileManager.getDisplayName(this), langTag);
+                                ProfileManager.getDisplayName(this),
+                                myLang != null ? myLang.getBcp47Tag() : "en");
                     })
                     .setNegativeButton("Cancel", null).show();
         });
-    }
-
-    // ─── Helpers ─────────────────────────────────────────────────────────────
-
-    private static String getFlagForLang(String langTag) {
-        Language lang = LanguageManager.findByTag(langTag);
-        return (lang != null) ? lang.getFlagEmoji() : "🌐";
     }
 }

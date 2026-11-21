@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:background="@color/background">
+
+    <!-- Top spacer -->
+    <View android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- Logo -->
+    <ImageView
+        android:layout_width="@dimen/logo_size"
+        android:layout_height="@dimen/logo_size"
+        android:src="@drawable/ic_logo"
+        android:scaleType="fitCenter"
+        android:contentDescription="BabelMic" />
+
+    <!-- "Disconnected" title -->
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Disconnected"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:layout_marginTop="40dp" />
+
+    <!-- Subtitle -->
+    <TextView
+        android:id="@+id/tv_subtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="13sp"
+        android:textColor="@color/text_secondary"
+        android:layout_marginTop="6dp"
+        android:gravity="center"
+        android:paddingHorizontal="32dp"
+        tools:text="The peer disconnected from the conversation" />
+
+    <!-- Avatar row: Peer avatar × Your avatar -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="40dp">
+
+        <!-- Peer avatar + name -->
+        <LinearLayout android:layout_width="80dp" android:layout_height="wrap_content"
+            android:orientation="vertical" android:gravity="center">
+            <com.babelmic.app.ui.widget.AvatarBadgeView
+                android:id="@+id/badge_peer"
+                android:layout_width="64dp" android:layout_height="64dp" />
+            <TextView android:id="@+id/tv_peer_name"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:textSize="13sp" android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:layout_marginTop="8dp"
+                tools:text="John" />
+        </LinearLayout>
+
+        <!-- Red × -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="✕"
+            android:textSize="28sp"
+            android:textColor="@color/disconnect_red"
+            android:layout_marginHorizontal="20dp" />
+
+        <!-- My avatar + "You" -->
+        <LinearLayout android:layout_width="80dp" android:layout_height="wrap_content"
+            android:orientation="vertical" android:gravity="center">
+            <com.babelmic.app.ui.widget.AvatarBadgeView
+                android:id="@+id/badge_me"
+                android:layout_width="64dp" android:layout_height="64dp" />
+            <TextView
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:textSize="13sp" android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:layout_marginTop="8dp"
+                android:text="You" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Middle spacer -->
+    <View android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="2" />
+
+    <!-- Change language + Find peer buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/button_height"
+        android:orientation="horizontal"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginBottom="40dp"
+        android:weightSum="2">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_change_language"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:text="Change language"
+            android:textColor="@color/text_on_black"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:backgroundTint="@color/babelmic_black"
+            app:cornerRadius="@dimen/button_corner"
+            app:elevation="0dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_find_peer"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="Find peer"
+            android:textColor="@color/text_on_blue"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:backgroundTint="@color/babelmic_blue"
+            app:cornerRadius="@dimen/button_corner"
+            app:elevation="0dp" />
+
+    </LinearLayout>
+
+</LinearLayout>

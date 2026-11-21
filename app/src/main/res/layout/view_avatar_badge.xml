@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <ImageView
+        android:id="@+id/iv_badge_avatar"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="4dp"
+        android:scaleType="fitCenter" />
+
+    <ImageView
+        android:id="@+id/iv_badge_ring"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/bg_avatar_ring"
+        android:contentDescription="@null" />
+
+</merge>

@@ -1,17 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:background="@color/background"
-    android:paddingHorizontal="32dp">
+    android:background="@color/background">
 
-    <!-- Spacer to push content to upper-centre -->
-    <View android:layout_width="match_parent" android:layout_height="0dp"
-        android:layout_weight="1" />
+    <!-- Back arrow (black circle) -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_back"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:padding="0dp"
+        android:text="‹"
+        android:textSize="22sp"
+        android:textColor="@color/text_on_black"
+        app:backgroundTint="@color/babelmic_black"
+        app:strokeWidth="0dp"
+        app:cornerRadius="22dp"
+        app:elevation="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <!-- Logo -->
     <ImageView
@@ -19,42 +31,79 @@
         android:layout_width="@dimen/logo_size"
         android:layout_height="@dimen/logo_size"
         android:src="@drawable/ic_logo"
-        android:contentDescription="BabelMic logo"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="48dp" />
+        android:scaleType="fitCenter"
+        android:contentDescription="BabelMic"
+        android:layout_marginTop="80dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Username input -->
+    <!-- "Username" title -->
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Username"
+        android:textSize="26sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:layout_marginTop="24dp"
+        app:layout_constraintTop_toBottomOf="@id/iv_logo"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Subtitle -->
+    <TextView
+        android:id="@+id/tv_subtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="You can change it anytime"
+        android:textSize="14sp"
+        android:textColor="@color/text_secondary"
+        android:layout_marginTop="6dp"
+        app:layout_constraintTop_toBottomOf="@id/tv_title"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Input field -->
     <EditText
         android:id="@+id/et_username"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="@dimen/input_height"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginTop="32dp"
         android:background="@drawable/bg_input_pill"
-        android:hint="Username"
+        android:hint="babelmic_user"
         android:textColorHint="@color/text_hint"
         android:textColor="@color/text_primary"
         android:textSize="15sp"
         android:paddingHorizontal="20dp"
+        android:gravity="center"
         android:inputType="textPersonName"
         android:maxLength="24"
         android:singleLine="true"
         android:imeOptions="actionDone"
-        android:layout_marginBottom="16dp" />
+        app:layout_constraintTop_toBottomOf="@id/tv_subtitle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Confirm button -->
+    <!-- Next button — pinned to bottom -->
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_confirm"
-        android:layout_width="match_parent"
+        android:id="@+id/btn_next"
+        android:layout_width="0dp"
         android:layout_height="@dimen/button_height"
-        android:text="Confirm"
-        android:textColor="@color/text_on_primary"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginBottom="40dp"
+        android:text="Next"
+        android:textColor="@color/text_on_blue"
         android:textSize="16sp"
         android:textStyle="bold"
-        app:backgroundTint="@color/babelmic_primary"
+        android:enabled="false"
+        app:backgroundTint="@color/babelmic_blue"
         app:cornerRadius="@dimen/button_corner"
-        app:elevation="0dp" />
+        app:elevation="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Spacer bottom (larger so content sits at ~40% from top) -->
-    <View android:layout_width="match_parent" android:layout_height="0dp"
-        android:layout_weight="2" />
-
-</LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

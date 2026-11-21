@@ -25,8 +25,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Screen 3 — Language selection.
- * Searchable list of languages; Confirm navigates to DeviceDiscoveryActivity.
+ * Screen 5 — Language selection.
+ * Shows user's avatar badge top-right. Selected language gets a full pill highlight.
+ * "Find peer" button navigates to DeviceDiscoveryActivity.
  */
 public class LanguageSelectionActivity extends AppCompatActivity
         implements LanguageAdapter.OnLanguageSelectedListener {
@@ -38,13 +39,12 @@ public class LanguageSelectionActivity extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // Ensure default profile exists for downstream screens
         ProfileManager.ensureDefaultProfile(this);
 
         binding = ActivityLanguageSelectionBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        setupMyBadge();
         setupList();
         setupSearch();
         setupButtons();
@@ -52,6 +52,12 @@ public class LanguageSelectionActivity extends AppCompatActivity
         if (!PermissionHelper.hasAllPermissions(this)) {
             PermissionHelper.requestMissingPermissions(this);
         }
+    }
+
+    private void setupMyBadge() {
+        int resId = ProfileManager.getAvatarResId(this);
+        int color = ProfileManager.getIdentityColor(this);
+        if (resId != 0) binding.badgeMyAvatar.set(resId, color);
     }
 
     private void setupList() {
@@ -72,14 +78,13 @@ public class LanguageSelectionActivity extends AppCompatActivity
     }
 
     private void setupButtons() {
-        binding.btnBack.setOnClickListener(v -> onBackPressed());
-        binding.btnConfirm.setEnabled(false);
-        binding.btnConfirm.setOnClickListener(v -> {
+        binding.btnBack.setOnClickListener(v -> finish());
+        binding.btnFindPeer.setEnabled(false);
+        binding.btnFindPeer.setOnClickListener(v -> {
             if (selectedLanguage == null) return;
             if (!PermissionHelper.hasAllPermissions(this)) {
                 PermissionHelper.requestMissingPermissions(this);
-                Toast.makeText(this, "Please grant permissions to continue",
-                        Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Please grant permissions first", Toast.LENGTH_SHORT).show();
                 return;
             }
             navigateToDiscovery();
@@ -89,7 +94,7 @@ public class LanguageSelectionActivity extends AppCompatActivity
     @Override
     public void onLanguageSelected(Language language) {
         selectedLanguage = language;
-        binding.btnConfirm.setEnabled(true);
+        binding.btnFindPeer.setEnabled(true);
     }
 
     private void filter(String q) {
@@ -99,32 +104,23 @@ public class LanguageSelectionActivity extends AppCompatActivity
         List<Language> out = new ArrayList<>();
         for (Language l : all) {
             if (l.getDisplayName().toLowerCase().contains(lower)
-                    || l.getNativeName().toLowerCase().contains(lower)) {
-                out.add(l);
-            }
+                    || l.getNativeName().toLowerCase().contains(lower)) out.add(l);
         }
         adapter.updateList(out);
     }
 
     private void navigateToDiscovery() {
-        // Mark setup fully complete only now — user has gone through all onboarding steps
         ProfileManager.setLanguage(this,
-                selectedLanguage.getBcp47Tag(),
-                selectedLanguage.getDisplayName());
+                selectedLanguage.getBcp47Tag(), selectedLanguage.getDisplayName());
         ProfileManager.markSetupComplete(this);
 
-        Intent intent = new Intent(this, DeviceDiscoveryActivity.class);
-        intent.putExtra(SessionConfig.EXTRA_MY_LANGUAGE_TAG,  selectedLanguage.getBcp47Tag());
-        intent.putExtra(SessionConfig.EXTRA_MY_LANGUAGE_NAME, selectedLanguage.getDisplayName());
-        startActivity(intent);
+        startActivity(new Intent(this, DeviceDiscoveryActivity.class));
     }
 
-    // ─── Test / loopback mode (kept for Test Mode menu option) ───────────────
-
+    // Test / loopback mode entry point
     public void navigateToLoopback(Language language) {
         selectedLanguage = language;
         ProfileManager.setLanguage(this, language.getBcp47Tag(), language.getDisplayName());
-
         String targetTag = "fr";
         for (Language l : LanguageManager.getSupportedLanguages()) {
             if (!l.getBcp47Tag().equalsIgnoreCase(language.getBcp47Tag())) {
@@ -132,7 +128,6 @@ public class LanguageSelectionActivity extends AppCompatActivity
             }
         }
         if (language.getBcp47Tag().equalsIgnoreCase("fr")) targetTag = "en";
-
         Intent intent = new Intent(this, ConversationActivity.class);
         intent.putExtra(SessionConfig.EXTRA_MY_LANGUAGE_TAG,      language.getBcp47Tag());
         intent.putExtra(SessionConfig.EXTRA_MY_LANGUAGE_NAME,     language.getDisplayName());
@@ -141,18 +136,16 @@ public class LanguageSelectionActivity extends AppCompatActivity
         startActivity(intent);
     }
 
-    // ─── Permissions ─────────────────────────────────────────────────────────
-
     @Override
-    public void onRequestPermissionsResult(int code, @androidx.annotation.NonNull String[] perms,
-                                            @androidx.annotation.NonNull int[] results) {
+    public void onRequestPermissionsResult(int code,
+            @androidx.annotation.NonNull String[] perms,
+            @androidx.annotation.NonNull int[] results) {
         super.onRequestPermissionsResult(code, perms, results);
         if (code == PermissionHelper.REQUEST_CODE_ALL_PERMISSIONS
                 && !PermissionHelper.allGranted(results)) {
             new AlertDialog.Builder(this)
                     .setTitle("Permissions Required")
-                    .setMessage("BabelMic needs Microphone and Wi-Fi Direct access.\n\n"
-                            + "Open Settings to grant them.")
+                    .setMessage("BabelMic needs Microphone and Wi-Fi Direct access.")
                     .setPositiveButton("Open Settings", (d, w) -> {
                         Intent i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
                         i.setData(Uri.fromParts("package", getPackageName(), null));

@@ -11,32 +11,27 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.babelmic.app.R;
 
 /**
- * Horizontal RecyclerView adapter for the color swatch row on the avatar setup screen.
- * Swatches are large rounded squares; the selected one shows a white checkmark.
+ * Horizontal RecyclerView of circular colour swatches.
+ * Selected swatch shows a light grey outer ring.
  */
 public class ColorSwatchAdapter
-        extends RecyclerView.Adapter<ColorSwatchAdapter.SwatchViewHolder> {
+        extends RecyclerView.Adapter<ColorSwatchAdapter.SwatchHolder> {
 
-    public interface OnColorSelectedListener {
-        void onColorSelected(int color);
-    }
+    public interface OnColorSelectedListener { void onColorSelected(int color); }
 
-    // The six colours shown in the mockup
-    private static final int[] COLORS = {
-        0xFF5B21F5, // Purple
-        0xFFFFEB00, // Yellow
-        0xFFFF3B82, // Pink
-        0xFF4ADE80, // Green
-        0xFF3B82F6, // Blue
-        0xFFEF4444, // Red
+    public static final int[] COLORS = {
+        0xFF1E40FF, // blue
+        0xFFFFD600, // yellow
+        0xFFFF2D78, // pink
+        0xFF4ADE80, // green
+        0xFFA855F7, // purple
+        0xFFEF4444, // red
     };
 
     private int selected = 0;
     private final OnColorSelectedListener listener;
 
-    public ColorSwatchAdapter(OnColorSelectedListener listener) {
-        this.listener = listener;
-    }
+    public ColorSwatchAdapter(OnColorSelectedListener listener) { this.listener = listener; }
 
     public int getSelectedColor() { return COLORS[selected]; }
 
@@ -47,40 +42,38 @@ public class ColorSwatchAdapter
     }
 
     @NonNull @Override
-    public SwatchViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public SwatchHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_color_swatch, parent, false);
-        return new SwatchViewHolder(v);
+        return new SwatchHolder(v);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull SwatchViewHolder h, int position) {
-        int color = COLORS[position];
+    public void onBindViewHolder(@NonNull SwatchHolder h, int pos) {
+        // Tint the filled circle
+        GradientDrawable circle = (GradientDrawable) h.swatch.getBackground().mutate();
+        circle.setColor(COLORS[pos]);
 
-        // Tint the rounded square background
-        GradientDrawable bg = (GradientDrawable)
-                h.itemView.getBackground().mutate();
-        bg.setColor(color);
-
-        // Show checkmark on selected
-        h.check.setVisibility(position == selected ? View.VISIBLE : View.GONE);
+        // Selection ring visibility
+        h.ring.setVisibility(pos == selected ? View.VISIBLE : View.GONE);
 
         h.itemView.setOnClickListener(v -> {
             int prev = selected;
             selected = h.getAdapterPosition();
             notifyItemChanged(prev);
             notifyItemChanged(selected);
-            listener.onColorSelected(color);
+            listener.onColorSelected(COLORS[selected]);
         });
     }
 
     @Override public int getItemCount() { return COLORS.length; }
 
-    static class SwatchViewHolder extends RecyclerView.ViewHolder {
-        View check;
-        SwatchViewHolder(@NonNull View v) {
+    static class SwatchHolder extends RecyclerView.ViewHolder {
+        View swatch, ring;
+        SwatchHolder(@NonNull View v) {
             super(v);
-            check = v.findViewById(R.id.iv_check);
+            swatch = v.findViewById(R.id.v_swatch);
+            ring   = v.findViewById(R.id.v_selection_ring);
         }
     }
 }

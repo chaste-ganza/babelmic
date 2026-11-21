@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/background">
+
+    <!-- Hands + floating logos image — takes up most of the screen -->
+    <ImageView
+        android:id="@+id/iv_hands"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:src="@drawable/onboarding_hands"
+        android:scaleType="centerCrop"
+        android:contentDescription="@null" />
+
+    <!-- Tagline -->
+    <TextView
+        android:id="@+id/tv_tagline"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Transforming translation\ntechnology"
+        android:textSize="26sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:lineSpacingMultiplier="1.15"
+        android:paddingHorizontal="24dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="20dp" />
+
+    <!-- Get started button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_get_started"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/button_height"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginBottom="40dp"
+        android:text="Get started"
+        android:textColor="@color/text_on_blue"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:backgroundTint="@color/babelmic_blue"
+        app:cornerRadius="@dimen/button_corner"
+        app:elevation="0dp" />
+
+</LinearLayout>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A single dialogue line: speaker name (in their identity colour) + text below -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingBottom="12dp">
+
+    <!-- Speaker name in their identity colour — set at runtime -->
+    <TextView
+        android:id="@+id/tv_speaker_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:textColor="#FF2D78"
+        tools:text="John" />
+
+    <!-- The spoken / translated text -->
+    <TextView
+        android:id="@+id/tv_line_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="17sp"
+        android:textColor="@color/text_primary"
+        android:lineSpacingMultiplier="1.2"
+        tools:text="okay, go to that post and when you reach there, turn left" />
+
+</LinearLayout>

@@ -2,23 +2,25 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/row_root"
     android:layout_width="match_parent"
-    android:layout_height="64dp"
+    android:layout_height="60dp"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:paddingHorizontal="16dp"
-    android:paddingVertical="4dp"
-    android:background="@drawable/bg_language_item"
+    android:paddingHorizontal="12dp"
+    android:paddingVertical="6dp"
+    android:layout_marginHorizontal="12dp"
+    android:layout_marginVertical="2dp"
     android:clickable="true"
     android:focusable="true">
 
-    <!-- Flag emoji -->
+    <!-- Flag emoji in a rounded square -->
     <TextView
         android:id="@+id/tv_flag"
         android:layout_width="44dp"
         android:layout_height="44dp"
         android:gravity="center"
-        android:textSize="28sp"
+        android:textSize="26sp"
         tools:text="🇫🇷" />
 
     <!-- Name + native name -->
@@ -42,19 +44,10 @@
             android:id="@+id/tv_native_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="13sp"
+            android:textSize="12sp"
             android:textColor="@color/text_secondary"
             tools:text="Français" />
 
     </LinearLayout>
-
-    <!-- Selection checkmark — purple -->
-    <ImageView
-        android:id="@+id/iv_selected"
-        android:layout_width="22dp"
-        android:layout_height="22dp"
-        android:src="@drawable/ic_check_purple"
-        android:visibility="gone"
-        tools:visibility="visible" />
 
 </LinearLayout>

@@ -1,41 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Base app theme — no action bar, white background, purple primary -->
     <style name="Theme.BabelMic" parent="Theme.MaterialComponents.Light.NoActionBar">
-        <item name="colorPrimary">@color/babelmic_primary</item>
-        <item name="colorPrimaryVariant">@color/babelmic_primary_dark</item>
-        <item name="colorOnPrimary">@color/text_on_primary</item>
-        <item name="colorSecondary">@color/babelmic_accent</item>
-        <item name="colorOnSecondary">@color/text_on_accent</item>
+        <item name="colorPrimary">@color/babelmic_blue</item>
+        <item name="colorPrimaryVariant">@color/babelmic_blue_dark</item>
+        <item name="colorOnPrimary">@color/text_on_blue</item>
+        <item name="colorSecondary">@color/ring_pink</item>
+        <item name="colorOnSecondary">@color/text_on_blue</item>
         <item name="android:colorBackground">@color/background</item>
         <item name="colorSurface">@color/surface</item>
         <item name="colorOnSurface">@color/text_primary</item>
-        <item name="android:statusBarColor">@color/background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:textColorPrimary">@color/text_primary</item>
         <item name="android:textColorSecondary">@color/text_secondary</item>
         <item name="android:textColorHint">@color/text_hint</item>
-        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.BabelMic.SmallComponent</item>
-        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.BabelMic.MediumComponent</item>
     </style>
 
-    <style name="ShapeAppearance.BabelMic.SmallComponent"
-        parent="ShapeAppearance.MaterialComponents.SmallComponent">
-        <item name="cornerSize">50%</item>
+    <!-- Splash / Onboarding — no status bar tint -->
+    <style name="Theme.BabelMic.Splash" parent="Theme.BabelMic">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 
-    <style name="ShapeAppearance.BabelMic.MediumComponent"
-        parent="ShapeAppearance.MaterialComponents.MediumComponent">
-        <item name="cornerSize">16dp</item>
-    </style>
-
-    <!-- Full-width pill button — purple filled -->
+    <!-- Blue filled pill button -->
     <style name="Widget.BabelMic.Button.Primary" parent="Widget.MaterialComponents.Button">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">56dp</item>
-        <item name="backgroundTint">@color/babelmic_primary</item>
-        <item name="android:textColor">@color/text_on_primary</item>
+        <item name="backgroundTint">@color/babelmic_blue</item>
+        <item name="android:textColor">@color/text_on_blue</item>
         <item name="android:textSize">16sp</item>
         <item name="android:textStyle">bold</item>
         <item name="cornerRadius">28dp</item>
@@ -43,34 +35,21 @@
         <item name="android:stateListAnimator">@null</item>
     </style>
 
-    <!-- Outlined pill button — purple border, purple text -->
-    <style name="Widget.BabelMic.Button.Outlined" parent="Widget.MaterialComponents.Button.OutlinedButton">
-        <item name="android:layout_height">56dp</item>
-        <item name="android:textColor">@color/babelmic_primary</item>
+    <!-- Black filled pill button -->
+    <style name="Widget.BabelMic.Button.Black" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">@color/babelmic_black</item>
+        <item name="android:textColor">@color/text_on_black</item>
         <item name="android:textSize">16sp</item>
         <item name="android:textStyle">bold</item>
-        <item name="strokeColor">@color/babelmic_primary</item>
-        <item name="strokeWidth">2dp</item>
         <item name="cornerRadius">28dp</item>
         <item name="elevation">0dp</item>
         <item name="android:stateListAnimator">@null</item>
     </style>
 
-    <!-- Circular FAB mic button -->
-    <style name="Widget.BabelMic.MicButton" parent="Widget.MaterialComponents.Button">
-        <item name="android:layout_width">72dp</item>
-        <item name="android:layout_height">72dp</item>
-        <item name="backgroundTint">@color/mic_button_bg</item>
-        <item name="cornerRadius">36dp</item>
-        <item name="elevation">4dp</item>
-        <item name="android:stateListAnimator">@null</item>
-    </style>
-
-    <!-- Red pill disconnect button -->
+    <!-- Red pill disconnect -->
     <style name="Widget.BabelMic.Button.Disconnect" parent="Widget.MaterialComponents.Button">
-        <item name="android:layout_height">40dp</item>
-        <item name="backgroundTint">@color/disconnect_button_bg</item>
-        <item name="android:textColor">@color/text_on_primary</item>
+        <item name="backgroundTint">@color/disconnect_red</item>
+        <item name="android:textColor">@color/text_on_blue</item>
         <item name="android:textSize">13sp</item>
         <item name="android:textStyle">bold</item>
         <item name="cornerRadius">20dp</item>
@@ -78,15 +57,12 @@
         <item name="android:stateListAnimator">@null</item>
     </style>
 
-    <!-- Input field — pill shape -->
-    <style name="Widget.BabelMic.TextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-        <item name="boxCornerRadiusTopStart">28dp</item>
-        <item name="boxCornerRadiusTopEnd">28dp</item>
-        <item name="boxCornerRadiusBottomStart">28dp</item>
-        <item name="boxCornerRadiusBottomEnd">28dp</item>
-        <item name="boxStrokeColor">@color/input_border</item>
-        <item name="boxBackgroundColor">@color/input_bg</item>
-        <item name="hintEnabled">false</item>
+    <!-- Circular black mic FAB -->
+    <style name="Widget.BabelMic.MicButton" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">@color/babelmic_black</item>
+        <item name="cornerRadius">36dp</item>
+        <item name="elevation">4dp</item>
+        <item name="android:stateListAnimator">@null</item>
     </style>
 
 </resources>

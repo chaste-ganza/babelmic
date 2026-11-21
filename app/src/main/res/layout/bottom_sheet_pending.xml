@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_bottom_sheet"
+    android:paddingHorizontal="24dp"
+    android:paddingBottom="40dp">
+
+    <!-- Drag handle -->
+    <View android:layout_width="40dp" android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="10dp" android:layout_marginBottom="8dp"
+        android:background="#CCCCCC" />
+
+    <!-- "Pending connection" title -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Pending connection"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="8dp" />
+
+    <!-- Subtitle -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Wait for the peer to respond to connection request"
+        android:textSize="13sp"
+        android:textColor="@color/text_secondary"
+        android:gravity="center"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="32dp" />
+
+    <!-- Avatar row: You >>> Peer -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="40dp">
+
+        <!-- My avatar -->
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+            <com.babelmic.app.ui.widget.AvatarBadgeView
+                android:id="@+id/badge_my_avatar"
+                android:layout_width="72dp" android:layout_height="72dp" />
+            <TextView android:id="@+id/tv_my_name"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:textSize="13sp" android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:layout_marginTop="8dp"
+                tools:text="You" />
+        </LinearLayout>
+
+        <!-- Animated chevrons — drawn as a custom view -->
+        <com.babelmic.app.ui.widget.ChevronArrowView
+            android:id="@+id/chevron_arrow"
+            android:layout_width="80dp"
+            android:layout_height="30dp" />
+
+        <!-- Peer avatar -->
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+            <com.babelmic.app.ui.widget.AvatarBadgeView
+                android:id="@+id/badge_peer_avatar"
+                android:layout_width="72dp" android:layout_height="72dp" />
+            <TextView android:id="@+id/tv_peer_name"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:textSize="13sp" android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:layout_marginTop="8dp"
+                tools:text="John" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Revoke button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_revoke"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/button_height"
+        android:text="Revoke"
+        android:textColor="@color/text_on_black"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:backgroundTint="@color/babelmic_black"
+        app:cornerRadius="@dimen/button_corner"
+        app:elevation="0dp" />
+
+</LinearLayout>

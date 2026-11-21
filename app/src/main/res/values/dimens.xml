@@ -7,18 +7,27 @@
     <dimen name="spacing_xl">32dp</dimen>
     <dimen name="spacing_xxl">48dp</dimen>
 
-    <dimen name="logo_size">64dp</dimen>
-    <dimen name="logo_text_size">48sp</dimen>
-
+    <dimen name="logo_size">48dp</dimen>
     <dimen name="button_height">56dp</dimen>
     <dimen name="button_corner">28dp</dimen>
-    <dimen name="mic_button_size">72dp</dimen>
-
     <dimen name="input_height">52dp</dimen>
     <dimen name="input_corner">26dp</dimen>
 
-    <dimen name="avatar_icon_size">48dp</dimen>
-    <dimen name="avatar_flag_badge_size">22dp</dimen>
+    <!-- Avatar sizes -->
+    <dimen name="avatar_large">120dp</dimen>   <!-- profile setup preview -->
+    <dimen name="avatar_badge">40dp</dimen>    <!-- top-right corner badge -->
+    <dimen name="avatar_peer_card">48dp</dimen>
+    <dimen name="avatar_conversation_top">48dp</dimen>
 
+    <!-- Identity ring -->
+    <dimen name="ring_stroke_large">4dp</dimen>
+    <dimen name="ring_stroke_badge">3dp</dimen>
+
+    <!-- Mic FAB -->
+    <dimen name="mic_button_size">72dp</dimen>
     <dimen name="mic_button_height">72dp</dimen>
+
+    <!-- Dialogue text -->
+    <dimen name="dialogue_name_size">13sp</dimen>
+    <dimen name="dialogue_text_size">16sp</dimen>
 </resources>

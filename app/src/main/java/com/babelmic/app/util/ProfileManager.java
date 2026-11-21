@@ -27,7 +27,7 @@ public final class ProfileManager {
     // ─── Profile version ─────────────────────────────────────────────────────
     // Bump this whenever the profile schema changes in a breaking way.
     // On mismatch the stored profile is wiped and the user goes through onboarding.
-    private static final int    CURRENT_PROFILE_VERSION = 2; // 2 = avatar image system
+    private static final int    CURRENT_PROFILE_VERSION = 3; // 3 = identity colour + avatar name
     private static final String KEY_PROFILE_VERSION     = "profile_version";
 
     private static final String KEY_NAME         = "display_name";
@@ -37,14 +37,17 @@ public final class ProfileManager {
     private static final String KEY_COLOR_TOP    = "avatar_color_top";
     private static final String KEY_COLOR_BOTTOM = "avatar_color_bottom";
     private static final String KEY_AVATAR_RES   = "avatar_res_id";
+    private static final String KEY_AVATAR_NAME  = "avatar_name";       // e.g. "avatar_bird"
+    private static final String KEY_IDENTITY_COLOR = "identity_color";  // ring / wave colour
     private static final String KEY_SETUP_DONE   = "setup_complete";
 
     // Defaults
-    private static final String DEFAULT_NAME     = "";
-    private static final String DEFAULT_LANG_TAG = "en";
-    private static final String DEFAULT_LANG_NAME= "English";
-    private static final int    DEFAULT_COLOR_TOP    = Color.parseColor("#1A73E8");
-    private static final int    DEFAULT_COLOR_BOTTOM = Color.parseColor("#4FC3F7");
+    private static final String DEFAULT_NAME         = "";
+    private static final String DEFAULT_LANG_TAG     = "en";
+    private static final String DEFAULT_LANG_NAME    = "English";
+    private static final int    DEFAULT_COLOR_TOP    = 0xFF1A73E8;
+    private static final int    DEFAULT_COLOR_BOTTOM = 0xFF4FC3F7;
+    private static final int    DEFAULT_IDENTITY_COLOR = 0xFFFF2D78; // pink
 
     private ProfileManager() {}
 
@@ -139,9 +142,30 @@ public final class ProfileManager {
         return prefs(ctx).getInt(KEY_COLOR_BOTTOM, DEFAULT_COLOR_BOTTOM);
     }
 
-    /** Resource ID of the selected avatar drawable, e.g. R.drawable.avatar_1 */
+    /** Resource ID of the selected avatar drawable, e.g. R.drawable.avatar_bird */
     public static int getAvatarResId(Context ctx) {
-        return prefs(ctx).getInt(KEY_AVATAR_RES, 0);
+        int stored = prefs(ctx).getInt(KEY_AVATAR_RES, 0);
+        if (stored != 0) return stored;
+        // Fall back: resolve from avatar name
+        String name = getAvatarName(ctx);
+        if (!name.isEmpty()) {
+            for (int i = 0; i < com.babelmic.app.ui.profile.AvatarGridAdapter.AVATAR_NAMES.length; i++) {
+                if (com.babelmic.app.ui.profile.AvatarGridAdapter.AVATAR_NAMES[i].equals(name)) {
+                    return com.babelmic.app.ui.profile.AvatarGridAdapter.AVATAR_RES[i];
+                }
+            }
+        }
+        return 0;
+    }
+
+    /** The avatar name string, e.g. "avatar_bird". */
+    public static String getAvatarName(Context ctx) {
+        return prefs(ctx).getString(KEY_AVATAR_NAME, "");
+    }
+
+    /** The user's identity colour used for ring and wave visualizer. */
+    public static int getIdentityColor(Context ctx) {
+        return prefs(ctx).getInt(KEY_IDENTITY_COLOR, DEFAULT_IDENTITY_COLOR);
     }
 
     // ─── Setters ─────────────────────────────────────────────────────────────
@@ -170,6 +194,14 @@ public final class ProfileManager {
 
     public static void setAvatarResId(Context ctx, int resId) {
         prefs(ctx).edit().putInt(KEY_AVATAR_RES, resId).apply();
+    }
+
+    public static void setAvatarName(Context ctx, String name) {
+        prefs(ctx).edit().putString(KEY_AVATAR_NAME, name).apply();
+    }
+
+    public static void setIdentityColor(Context ctx, int color) {
+        prefs(ctx).edit().putInt(KEY_IDENTITY_COLOR, color).apply();
     }
 
     /**
@@ -202,11 +234,13 @@ public final class ProfileManager {
      */
     public static String toHandshakeJson(Context ctx) {
         return "{"
-                + "\"n\":\"" + escape(getDisplayName(ctx)) + "\","
-                + "\"l\":\""  + getLanguageTag(ctx)        + "\","
-                + "\"ln\":\"" + escape(getLanguageName(ctx))+ "\","
-                + "\"s\":\""  + getAvatarShape(ctx).name() + "\","
-                + "\"ct\":"   + getColorTop(ctx)           + ","
+                + "\"n\":\""  + escape(getDisplayName(ctx))   + "\","
+                + "\"l\":\""  + getLanguageTag(ctx)           + "\","
+                + "\"ln\":\"" + escape(getLanguageName(ctx))  + "\","
+                + "\"s\":\""  + getAvatarShape(ctx).name()    + "\","
+                + "\"an\":\"" + escape(getAvatarName(ctx))    + "\","
+                + "\"ic\":"   + getIdentityColor(ctx)         + ","
+                + "\"ct\":"   + getColorTop(ctx)              + ","
                 + "\"cb\":"   + getColorBottom(ctx)
                 + "}";
     }
@@ -217,23 +251,41 @@ public final class ProfileManager {
      */
     public static PeerProfile fromHandshakeJson(String json) {
         try {
-            String name     = extractString(json, "n",  "Partner");
-            String langTag  = extractString(json, "l",  "en");
-            String langName = extractString(json, "ln", "English");
-            String shapeName= extractString(json, "s",  "CIRCLE");
-            int    ct       = extractInt(json,    "ct", Color.parseColor("#1A73E8"));
-            int    cb       = extractInt(json,    "cb", Color.parseColor("#4FC3F7"));
+            String name       = extractString(json, "n",  "Partner");
+            String langTag    = extractString(json, "l",  "en");
+            String langName   = extractString(json, "ln", "English");
+            String shapeName  = extractString(json, "s",  "CIRCLE");
+            String avatarName = extractString(json, "an", "");
+            int    ic         = extractInt(json,    "ic", 0xFFFF2D78);
+            int    ct         = extractInt(json,    "ct", 0xFF1A73E8);
+            int    cb         = extractInt(json,    "cb", 0xFF4FC3F7);
 
             AvatarShape shape;
             try { shape = AvatarShape.valueOf(shapeName); }
             catch (Exception e) { shape = AvatarShape.CIRCLE; }
 
-            return new PeerProfile(name, langTag, langName, shape, ct, cb);
+            // Resolve avatar res from name
+            int avatarRes = 0;
+            if (!avatarName.isEmpty()) {
+                for (int i = 0; i < com.babelmic.app.ui.profile.AvatarGridAdapter.AVATAR_NAMES.length; i++) {
+                    if (com.babelmic.app.ui.profile.AvatarGridAdapter.AVATAR_NAMES[i].equals(avatarName)) {
+                        avatarRes = com.babelmic.app.ui.profile.AvatarGridAdapter.AVATAR_RES[i];
+                        break;
+                    }
+                }
+            }
+            if (avatarRes == 0) {
+                // Fall back: stable hash of name
+                int idx = Math.abs(name.hashCode()) %
+                        com.babelmic.app.ui.profile.AvatarGridAdapter.AVATAR_RES.length;
+                avatarRes = com.babelmic.app.ui.profile.AvatarGridAdapter.AVATAR_RES[idx];
+            }
+
+            return new PeerProfile(name, langTag, langName, shape, ic, ct, cb, avatarRes);
         } catch (Exception e) {
             return new PeerProfile("Partner", "en", "English",
-                    AvatarShape.CIRCLE,
-                    Color.parseColor("#1A73E8"),
-                    Color.parseColor("#4FC3F7"));
+                    AvatarShape.CIRCLE, 0xFFFF2D78, 0xFF1A73E8, 0xFF4FC3F7,
+                    com.babelmic.app.R.drawable.avatar_rabbit);
         }
     }
 
@@ -282,17 +334,22 @@ public final class ProfileManager {
         public final String      languageTag;
         public final String      languageName;
         public final AvatarShape avatarShape;
+        public final int         identityColor; // ring / wave colour
         public final int         colorTop;
         public final int         colorBottom;
+        public final int         avatarResId;   // resolved drawable resource
 
         public PeerProfile(String name, String languageTag, String languageName,
-                           AvatarShape avatarShape, int colorTop, int colorBottom) {
-            this.name         = name;
-            this.languageTag  = languageTag;
-            this.languageName = languageName;
-            this.avatarShape  = avatarShape;
-            this.colorTop     = colorTop;
-            this.colorBottom  = colorBottom;
+                           AvatarShape avatarShape, int identityColor,
+                           int colorTop, int colorBottom, int avatarResId) {
+            this.name          = name;
+            this.languageTag   = languageTag;
+            this.languageName  = languageName;
+            this.avatarShape   = avatarShape;
+            this.identityColor = identityColor;
+            this.colorTop      = colorTop;
+            this.colorBottom   = colorBottom;
+            this.avatarResId   = avatarResId;
         }
     }
 }

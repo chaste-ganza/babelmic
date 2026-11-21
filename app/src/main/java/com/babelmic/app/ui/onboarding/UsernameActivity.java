@@ -9,15 +9,12 @@ import android.view.inputmethod.EditorInfo;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.babelmic.app.databinding.ActivityUsernameBinding;
-import com.babelmic.app.ui.language.LanguageSelectionActivity;
 import com.babelmic.app.ui.profile.ProfileSetupActivity;
 import com.babelmic.app.util.ProfileManager;
 
 /**
- * First screen — user enters their display name.
- * Shown only on first launch; skipped on subsequent opens.
- *
- * Flow: Username → ProfileSetupActivity (avatar) → LanguageSelectionActivity → Discovery
+ * Screen 3 — Username entry.
+ * Back → OnboardingActivity. Next → ProfileSetupActivity.
  */
 public class UsernameActivity extends AppCompatActivity {
 
@@ -26,45 +23,37 @@ public class UsernameActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // Skip if already set up — go straight to language selection
-        if (ProfileManager.isSetupComplete(this)) {
-            startActivity(new Intent(this, LanguageSelectionActivity.class));
-            finish();
-            return;
-        }
-
         binding = ActivityUsernameBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        binding.btnConfirm.setEnabled(false);
+        // Pre-fill if user is editing an existing name
+        String saved = ProfileManager.getDisplayName(this);
+        if (!saved.isEmpty()) {
+            binding.etUsername.setText(saved);
+            binding.etUsername.setSelection(saved.length());
+        }
 
         binding.etUsername.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
+            @Override public void beforeTextChanged(CharSequence s, int i, int c, int a) {}
             @Override public void afterTextChanged(Editable s) {}
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
-                binding.btnConfirm.setEnabled(s.toString().trim().length() > 0);
+            @Override public void onTextChanged(CharSequence s, int i, int b, int c) {
+                binding.btnNext.setEnabled(s.toString().trim().length() > 0);
             }
         });
 
         binding.etUsername.setOnEditorActionListener((v, actionId, event) -> {
-            if (actionId == EditorInfo.IME_ACTION_DONE) {
-                proceed();
-                return true;
-            }
+            if (actionId == EditorInfo.IME_ACTION_DONE) { proceed(); return true; }
             return false;
         });
 
-        binding.btnConfirm.setOnClickListener(v -> proceed());
+        binding.btnNext.setOnClickListener(v -> proceed());
+        binding.btnBack.setOnClickListener(v -> finish());
     }
 
     private void proceed() {
         String name = binding.etUsername.getText().toString().trim();
         if (name.isEmpty()) return;
-
-        // Save name to profile, leave other fields as defaults
         ProfileManager.setDisplayName(this, name);
-
         startActivity(new Intent(this, ProfileSetupActivity.class));
         finish();
     }
