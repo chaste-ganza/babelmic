@@ -3,6 +3,7 @@ package com.babelmic.app.ui.disconnected;
 import android.content.Intent;
 import android.os.Bundle;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.babelmic.app.databinding.ActivityDisconnectedBinding;
@@ -52,20 +53,23 @@ public class DisconnectedActivity extends AppCompatActivity {
         binding.tvPeerName.setText(peerName);
 
         // Buttons
-        binding.btnChangeLanguage.setOnClickListener(v -> {
-            startActivity(new Intent(this, LanguageSelectionActivity.class));
-            finish();
-        });
+        binding.btnChangeLanguage.setOnClickListener(v -> goToLanguageSelection());
 
         binding.btnFindPeer.setOnClickListener(v -> {
             startActivity(new Intent(this, DeviceDiscoveryActivity.class));
             finish();
         });
+
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override public void handleOnBackPressed() {
+                goToLanguageSelection();
+            }
+        });
     }
 
-    @Override public void onBackPressed() {
-        // Back from disconnected goes to language selection
+    private void goToLanguageSelection() {
         startActivity(new Intent(this, LanguageSelectionActivity.class));
         finish();
     }
+
 }

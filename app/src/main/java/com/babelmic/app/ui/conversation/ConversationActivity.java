@@ -9,6 +9,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
@@ -88,6 +89,7 @@ public class ConversationActivity extends AppCompatActivity {
         initPipeline();
         setupMicButton();
         setupDisconnectButton();
+        setupBackHandling();
     }
 
     @Override protected void onDestroy() {
@@ -99,7 +101,15 @@ public class ConversationActivity extends AppCompatActivity {
         executor.shutdown();
     }
 
-    @Override public void onBackPressed() {
+    private void setupBackHandling() {
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override public void handleOnBackPressed() {
+                showEndSessionDialog();
+            }
+        });
+    }
+
+    private void showEndSessionDialog() {
         new AlertDialog.Builder(this)
                 .setTitle("End Session?")
                 .setMessage("This will disconnect you from your partner.")
@@ -308,7 +318,7 @@ public class ConversationActivity extends AppCompatActivity {
     }
 
     private void setupDisconnectButton() {
-        binding.btnDisconnect.setOnClickListener(v -> onBackPressed());
+        binding.btnDisconnect.setOnClickListener(v -> showEndSessionDialog());
     }
 
     private void startListening() {
