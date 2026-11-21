@@ -191,17 +191,33 @@ public class WifiDirectPeerConnection implements PeerConnection {
      */
     @Override
     public void sendData(String payload) {
+        sendData(payload, null);
+    }
+
+    /**
+     * Sends a message and calls {@code onComplete} once it has actually been
+     * written to the socket — used before closing the connection so the final
+     * "disconnect" message is not lost.
+     */
+    public void sendData(String payload, Runnable onComplete) {
         if (!connected.get()) {
             throw new IllegalStateException(
                     "Cannot send data — no active P2P connection.");
         }
-        if (payload == null || payload.trim().isEmpty()) return;
+        if (payload == null || payload.trim().isEmpty()) {
+            if (onComplete != null) executor.execute(onComplete);
+            return;
+        }
 
         executor.execute(() -> {
-            if (writer != null) {
-                writer.println(payload); // println appends '\n' — our delimiter
-                writer.flush();
-                Log.d(TAG, "Sent -> " + payload);
+            try {
+                if (writer != null) {
+                    writer.println(payload); // println appends '\n' — our delimiter
+                    writer.flush();
+                    Log.d(TAG, "Sent -> " + payload);
+                }
+            } finally {
+                if (onComplete != null) onComplete.run();
             }
         });
     }

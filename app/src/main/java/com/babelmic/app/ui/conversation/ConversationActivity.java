@@ -25,8 +25,10 @@ import com.babelmic.app.ui.widget.WaveVisualizerView;
 import com.babelmic.app.util.LanguageManager;
 import com.babelmic.app.util.ProfileManager;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -65,6 +67,7 @@ public class ConversationActivity extends AppCompatActivity {
     private volatile boolean peerIsSpeaking   = false;
     private volatile boolean intentionalDisconnect = false;
     private final AtomicBoolean translationModelReady = new AtomicBoolean(false);
+    private final CountDownLatch modelReadyLatch = new CountDownLatch(1);
 
     // Dialogue
     private DialogueAdapter dialogueAdapter;
@@ -232,20 +235,27 @@ public class ConversationActivity extends AppCompatActivity {
 
     // ─── Model download ───────────────────────────────────────────────────────
 
+    /** Signal everyone waiting for the translation model exactly once. */
+    private void markModelReady() {
+        if (translationModelReady.compareAndSet(false, true)) {
+            modelReadyLatch.countDown();
+        }
+    }
+
     private void downloadModelThenEnableMic(String fromLang, String toLang) {
         addDialogueLine("System", 0xFF888888, "Downloading translation model…");
         binding.btnMic.setEnabled(false);
 
         translator.prepareModel(fromLang, toLang, new MLKitTranslator.ModelReadyCallback() {
             @Override public void onModelReady() {
-                translationModelReady.set(true);
+                markModelReady();
                 runOnUiThread(() -> {
                     dialogueAdapter.clear();
                     setMicEnabled(true);
                 });
             }
             @Override public void onModelDownloadFailed(Exception e) {
-                translationModelReady.set(true);
+                markModelReady();
                 runOnUiThread(() -> {
                     addDialogueLine("System", 0xFFEF4444, "⚠ Model unavailable — will retry");
                     setMicEnabled(true);
@@ -270,11 +280,11 @@ public class ConversationActivity extends AppCompatActivity {
         translator.prepareModel(myLanguage.getBcp47Tag(), loopbackTargetLang,
                 new MLKitTranslator.ModelReadyCallback() {
                     @Override public void onModelReady() {
-                        translationModelReady.set(true);
+                        markModelReady();
                         runOnUiThread(() -> { dlg.dismiss(); dialogueAdapter.clear(); setMicEnabled(true); });
                     }
                     @Override public void onModelDownloadFailed(Exception e) {
-                        translationModelReady.set(true);
+                        markModelReady();
                         runOnUiThread(() -> { dlg.dismiss(); setMicEnabled(true); });
                     }
                 });
@@ -399,10 +409,11 @@ public class ConversationActivity extends AppCompatActivity {
                     original = raw.substring(sep + 1);
                 } else { peerLang = "en"; original = raw; }
 
-                // Wait for model if needed
-                int waited = 0;
-                while (!translationModelReady.get() && waited < 15000) {
-                    Thread.sleep(300); waited += 300;
+                // Wait until the translation model is ready (or time out).
+                try {
+                    modelReadyLatch.await(15, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 }
 
                 String translated = translator.translate(
@@ -440,14 +451,22 @@ public class ConversationActivity extends AppCompatActivity {
 
     private void performDisconnect() {
         intentionalDisconnect = true;
-        if (peerConnection != null && peerConnection.isConnected()) {
-            try {
-                peerConnection.sendData(CTRL_DISCONNECT);
-                Thread.sleep(150);
-            } catch (Exception ignored) {}
-            peerConnection.disconnect();
+        if (peerConnection == null || !peerConnection.isConnected()) {
+            navigateToDisconnected(false);
+            return;
         }
-        navigateToDisconnected(false);
+
+        try {
+            // Close the socket only after the "disconnect" message has been flushed.
+            peerConnection.sendData(CTRL_DISCONNECT, () -> {
+                peerConnection.disconnect();
+                runOnUiThread(() -> navigateToDisconnected(false));
+            });
+        } catch (IllegalStateException e) {
+            // Peer vanished between the check and the send — just leave.
+            peerConnection.disconnect();
+            navigateToDisconnected(false);
+        }
     }
 
     private void navigateToDisconnected(boolean peerInitiated) {
