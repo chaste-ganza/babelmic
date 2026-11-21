@@ -435,19 +435,6 @@ public class ConversationActivity extends AppCompatActivity {
         if (count > 0) binding.rvDialogue.smoothScrollToPosition(count - 1);
     }
 
-    // ─── Avatar resolve ───────────────────────────────────────────────────────
-
-    /** Best-effort resolve peer avatar from their profile name hash. */
-    private int resolveAvatarRes(String peerName) {
-        if (peerProfile != null) {
-            String saved = ProfileManager.getAvatarName(this);
-            // Not the peer's avatar — use their name hash to pick a stable avatar
-        }
-        int idx = Math.abs(peerName.hashCode()) %
-                com.babelmic.app.ui.profile.AvatarGridAdapter.AVATAR_RES.length;
-        return com.babelmic.app.ui.profile.AvatarGridAdapter.AVATAR_RES[idx];
-    }
-
     // ─── Disconnect ───────────────────────────────────────────────────────────
 
     private void performDisconnect() {
