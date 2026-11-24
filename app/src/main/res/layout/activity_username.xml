@@ -7,21 +7,16 @@
     android:background="@color/background">
 
     <!-- Back arrow (black circle) -->
-    <com.google.android.material.button.MaterialButton
+    <ImageButton
         android:id="@+id/btn_back"
-        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
         android:layout_width="44dp"
         android:layout_height="44dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
-        android:padding="0dp"
-        android:text="‹"
-        android:textSize="22sp"
-        android:textColor="@color/text_on_black"
-        app:backgroundTint="@color/babelmic_black"
-        app:strokeWidth="0dp"
-        app:cornerRadius="22dp"
-        app:elevation="0dp"
+        android:background="@drawable/bg_back_button"
+        android:src="@drawable/ic_back_arrow"
+        android:scaleType="center"
+        android:contentDescription="@string/back"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 

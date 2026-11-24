@@ -2,6 +2,7 @@
 <resources>
     <string name="app_name">BabelMic</string>
     <string name="app_tagline">Transforming translation technology</string>
+    <string name="back">Back</string>
 
     <!-- Onboarding -->
     <string name="btn_get_started">Get started</string>
