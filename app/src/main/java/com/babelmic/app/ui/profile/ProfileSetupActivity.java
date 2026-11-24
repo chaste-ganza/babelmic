@@ -3,7 +3,7 @@ package com.babelmic.app.ui.profile;
 import android.content.Intent;
 import android.os.Bundle;
 
-import androidx.appcompat.app.AppCompatActivity;
+import com.babelmic.app.ui.base.BaseActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.babelmic.app.databinding.ActivityProfileSetupBinding;
@@ -18,7 +18,7 @@ import com.babelmic.app.util.ProfileManager;
  * The colour swatch row changes the ring colour instantly.
  * Confirm → LanguageSelectionActivity.
  */
-public class ProfileSetupActivity extends AppCompatActivity
+public class ProfileSetupActivity extends BaseActivity
         implements AvatarPickerBottomSheet.OnAvatarConfirmedListener {
 
     private ActivityProfileSetupBinding binding;

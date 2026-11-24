@@ -10,7 +10,7 @@ import android.view.MotionEvent;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
-import androidx.appcompat.app.AppCompatActivity;
+import com.babelmic.app.ui.base.BaseActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.babelmic.app.databinding.ActivityConversationBinding;
@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Zone 2: Scrolling dialogue RecyclerView — name in colour + text, older lines fade
  * Zone 3: Circular black mic FAB with BabelMic logo
  */
-public class ConversationActivity extends AppCompatActivity {
+public class ConversationActivity extends BaseActivity {
 
     private static final String TAG = "ConversationActivity";
 

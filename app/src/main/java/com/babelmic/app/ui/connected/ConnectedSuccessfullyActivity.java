@@ -5,7 +5,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 
-import androidx.appcompat.app.AppCompatActivity;
+import com.babelmic.app.ui.base.BaseActivity;
 
 import com.babelmic.app.R;
 import com.babelmic.app.model.SessionConfig;
@@ -16,7 +16,7 @@ import com.babelmic.app.ui.conversation.ConversationActivity;
  * Shows a green checkmark for 1.5 seconds then navigates to ConversationActivity.
  * Removes itself from the back stack so disconnect returns to DeviceDiscoveryActivity.
  */
-public class ConnectedSuccessfullyActivity extends AppCompatActivity {
+public class ConnectedSuccessfullyActivity extends BaseActivity {
 
     private static final long DISPLAY_MS = 1500L;
 

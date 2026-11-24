@@ -6,7 +6,7 @@ import android.os.Bundle;
 import android.provider.Settings;
 
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
+import com.babelmic.app.ui.base.BaseActivity;
 
 import com.babelmic.app.databinding.ActivityDeviceDiscoveryBinding;
 import com.babelmic.app.network.WifiDirectManager;
@@ -28,7 +28,7 @@ import java.util.Random;
  * "Connect peer" enabled only after selecting a peer.
  * Pending/Incoming shown as bottom sheets over this screen.
  */
-public class DeviceDiscoveryActivity extends AppCompatActivity
+public class DeviceDiscoveryActivity extends BaseActivity
         implements WifiDirectManager.WifiDirectCallback {
 
     private ActivityDeviceDiscoveryBinding binding;

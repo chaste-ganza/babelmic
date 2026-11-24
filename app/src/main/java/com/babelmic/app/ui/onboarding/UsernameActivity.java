@@ -6,7 +6,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.inputmethod.EditorInfo;
 
-import androidx.appcompat.app.AppCompatActivity;
+import com.babelmic.app.ui.base.BaseActivity;
 
 import com.babelmic.app.databinding.ActivityUsernameBinding;
 import com.babelmic.app.ui.profile.ProfileSetupActivity;
@@ -16,7 +16,7 @@ import com.babelmic.app.util.ProfileManager;
  * Screen 3 — Username entry.
  * Back → OnboardingActivity. Next → ProfileSetupActivity.
  */
-public class UsernameActivity extends AppCompatActivity {
+public class UsernameActivity extends BaseActivity {
 
     private ActivityUsernameBinding binding;
 

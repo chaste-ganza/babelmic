@@ -9,7 +9,7 @@ import android.text.TextWatcher;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
+import com.babelmic.app.ui.base.BaseActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.babelmic.app.databinding.ActivityLanguageSelectionBinding;
@@ -29,7 +29,7 @@ import java.util.List;
  * Shows user's avatar badge top-right. Selected language gets a full pill highlight.
  * "Find peer" button navigates to DeviceDiscoveryActivity.
  */
-public class LanguageSelectionActivity extends AppCompatActivity
+public class LanguageSelectionActivity extends BaseActivity
         implements LanguageAdapter.OnLanguageSelectedListener {
 
     private ActivityLanguageSelectionBinding binding;

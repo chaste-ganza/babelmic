@@ -4,7 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.activity.OnBackPressedCallback;
-import androidx.appcompat.app.AppCompatActivity;
+import com.babelmic.app.ui.base.BaseActivity;
 
 import com.babelmic.app.databinding.ActivityDisconnectedBinding;
 import com.babelmic.app.model.SessionConfig;
@@ -18,7 +18,7 @@ import com.babelmic.app.util.ProfileManager;
  * Two actions: Change language → LanguageSelectionActivity
  *              Find peer      → DeviceDiscoveryActivity
  */
-public class DisconnectedActivity extends AppCompatActivity {
+public class DisconnectedActivity extends BaseActivity {
 
     private ActivityDisconnectedBinding binding;
 
