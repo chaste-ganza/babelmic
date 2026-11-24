@@ -17,6 +17,11 @@
         <item name="android:textColorPrimary">@color/text_primary</item>
         <item name="android:textColorSecondary">@color/text_secondary</item>
         <item name="android:textColorHint">@color/text_hint</item>
+
+        <!-- Flat buttons: no press-lift shadow and no ripple wave.
+             Press feedback comes from the button colour changing instead. -->
+        <item name="materialButtonStyle">@style/Widget.BabelMic.Button.Primary</item>
+        <item name="rippleColor">@android:color/transparent</item>
     </style>
 
     <!-- Splash / Onboarding — no status bar tint -->
@@ -63,7 +68,7 @@
     <style name="Widget.BabelMic.MicButton" parent="Widget.MaterialComponents.Button">
         <item name="backgroundTint">@color/babelmic_black</item>
         <item name="cornerRadius">36dp</item>
-        <item name="elevation">4dp</item>
+        <item name="elevation">0dp</item>
         <item name="android:stateListAnimator">@null</item>
     </style>
 

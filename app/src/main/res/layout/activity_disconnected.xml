@@ -111,10 +111,10 @@
             android:layout_weight="1"
             android:layout_marginEnd="8dp"
             android:text="Change language"
-            android:textColor="@color/text_on_black"
+            android:textColor="@color/button_black_text"
             android:textSize="14sp"
             android:textStyle="bold"
-            app:backgroundTint="@color/babelmic_black"
+            app:backgroundTint="@color/button_black_background"
             app:cornerRadius="@dimen/button_corner"
             app:elevation="0dp" />
 
@@ -125,10 +125,10 @@
             android:layout_weight="1"
             android:layout_marginStart="8dp"
             android:text="Find peer"
-            android:textColor="@color/text_on_blue"
+            android:textColor="@color/button_primary_text"
             android:textSize="14sp"
             android:textStyle="bold"
-            app:backgroundTint="@color/babelmic_blue"
+            app:backgroundTint="@color/button_primary_background"
             app:cornerRadius="@dimen/button_corner"
             app:elevation="0dp" />
 

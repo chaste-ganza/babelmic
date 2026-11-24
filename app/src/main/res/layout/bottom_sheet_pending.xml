@@ -89,10 +89,10 @@
         android:layout_width="match_parent"
         android:layout_height="@dimen/button_height"
         android:text="Revoke"
-        android:textColor="@color/text_on_black"
+        android:textColor="@color/button_black_text"
         android:textSize="16sp"
         android:textStyle="bold"
-        app:backgroundTint="@color/babelmic_black"
+        app:backgroundTint="@color/button_black_background"
         app:cornerRadius="@dimen/button_corner"
         app:elevation="0dp" />
 

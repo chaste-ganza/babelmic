@@ -39,10 +39,10 @@
         android:layout_marginHorizontal="24dp"
         android:layout_marginBottom="40dp"
         android:text="Get started"
-        android:textColor="@color/text_on_blue"
+        android:textColor="@color/button_primary_text"
         android:textSize="16sp"
         android:textStyle="bold"
-        app:backgroundTint="@color/babelmic_blue"
+        app:backgroundTint="@color/button_primary_background"
         app:cornerRadius="@dimen/button_corner"
         app:elevation="0dp" />
 
