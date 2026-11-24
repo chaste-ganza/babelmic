@@ -44,10 +44,11 @@
         android:layout_marginHorizontal="24dp"
         android:layout_marginTop="16dp"
         android:text="Confirm"
-        android:textColor="#FFFFFF"
+        android:textColor="@color/button_primary_text"
         android:textSize="16sp"
         android:textStyle="bold"
-        app:backgroundTint="#1E40FF"
+        android:enabled="false"
+        app:backgroundTint="@color/button_primary_background"
         app:cornerRadius="28dp"
         app:elevation="0dp"
         xmlns:app="http://schemas.android.com/apk/res-auto" />

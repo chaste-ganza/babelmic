@@ -51,9 +51,12 @@ public class AvatarPickerBottomSheet extends BottomSheetDialogFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        gridAdapter = new AvatarGridAdapter((resId, name) -> { /* selection tracked in adapter */ });
+        gridAdapter = new AvatarGridAdapter((resId, name) -> binding.btnConfirm.setEnabled(true));
         gridAdapter.setRingColor(ringColor);
         if (preselectedName != null) gridAdapter.setSelectedByName(preselectedName);
+
+        // Confirm is greyed out until an avatar has been picked (or preselected).
+        binding.btnConfirm.setEnabled(gridAdapter.getSelectedPosition() >= 0);
 
         binding.rvAvatars.setLayoutManager(new GridLayoutManager(requireContext(), 3));
         binding.rvAvatars.setAdapter(gridAdapter);
